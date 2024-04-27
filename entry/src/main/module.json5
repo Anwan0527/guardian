@@ -1,5 +1,9 @@
 {
   "module": {
+    "requestPermissions": [{
+      "name":"ohos.permission.GET_NETWORK_INFO"
+    }
+    ],
     "name": "entry",
     "type": "entry",
     "description": "$string:module_desc",

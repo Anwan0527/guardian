@@ -1,5 +1,10 @@
 import { router } from '@kit.ArkUI'
 import { LOGIN_INFO, LoginInfoResponse } from '../../common/constants'
+import { batteryInfo, deviceInfo } from '@kit.BasicServicesKit'
+import { hidebug } from '@kit.PerformanceAnalysisKit'
+import { appManager } from '@kit.AbilityKit'
+import { statfs } from '@kit.CoreFileKit'
+import { GIGA_BYTE } from '../../common/utils'
 
 interface UsageItem {
   icon: Resource
@@ -13,12 +18,56 @@ export struct MyTabsComp {
   // 用户信息持久化
   @StorageLink(LOGIN_INFO) loginInfo: LoginInfoResponse = {}
   @StorageLink('topHeight') topHeight: number = 0
-  @Prop currentIndex: number
+  @Prop @Watch('onTabChange') currentIndex: number
   @State deviceName: string = ''
   @State batteryState: number = 0
   @State memorySize: number = 0
   @State cpuUsage: number = 0
   @State statfsFreeSize: number = 0
+
+  //获取系统电量
+  async getBatteryState() {
+    this.batteryState = batteryInfo.batterySOC
+  }
+
+  aboutToAppear() {
+    this.getAppMemorySize()
+    this.getCpuUsage()
+    this.getDeviceName()
+    this.getFreeStatfs()
+    this.getBatteryState()
+  }
+
+  onTabChange() {
+    if (this.currentIndex == 2) {
+      this.getAppMemorySize()
+      this.getCpuUsage()
+      this.getFreeStatfs()
+      this.getBatteryState()
+    }
+  }
+
+  //获取剩余内存
+  async getFreeStatfs() {
+    const context = getContext()
+    this.statfsFreeSize = await statfs.getFreeSizeSync(context.filesDir) / GIGA_BYTE
+  }
+
+  //获取应用内存大小
+  async getAppMemorySize() {
+    this.memorySize = await appManager.getAppMemorySize()
+  }
+
+  //获取进程CPU占用率
+  getCpuUsage() {
+    this.cpuUsage = hidebug.getCpuUsage() * 100
+  }
+
+  //获取设备名称
+  async getDeviceName() {
+    //模拟器名为enmulator
+    this.deviceName = deviceInfo.marketName
+  }
 
   // 标题行
   @Builder
