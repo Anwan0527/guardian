@@ -23,6 +23,34 @@ struct AuthPatternLockSettingsPage {
   // 控制器
   private patternLockController: PatternLockController = new PatternLockController()
 
+  // 设置错误信息
+  setErrorMessage(message: string) {
+    // 设置错误文案
+    this.errorMessage = message
+    // 设置图形错误密码状态
+    this.patternLockController.setChallengeResult(PatternLockChallengeResult.WRONG)
+  }
+
+  clearErrorMessage() {
+    //设置错误文案
+    this.errorMessage = ''
+    //设置图形错误密码状态
+    this.patternLockController.setChallengeResult(PatternLockChallengeResult.WRONG)
+  }
+
+  //密码输入结束时触发该回调
+  onPatterComplete(input: number[]) {
+    //保存当前输入的密码
+    this.inputPassword = input
+    //判断密码长度是否小于 4
+    if (this.inputPassword.length < 4) {
+      this.setErrorMessage('手势密码长度不能小于4位，请重新输入')
+    }
+    this.timeoutID = setTimeout(() => {
+      this.patternLockController.reset()
+    }, 500)
+  }
+
   build() {
     Navigation() {
       Column() {
@@ -61,10 +89,7 @@ struct AuthPatternLockSettingsPage {
           })
           .onPatternComplete((input: number[]) => {
             // TODO：密码输入结束时触发该回调
-            this.inputPassword = input
-            this.timeoutID = setTimeout(() => {
-              this.patternLockController.reset()
-            }, 500)
+            this.onPatterComplete(input)
           })
 
         Row({ space: 20 }) {
