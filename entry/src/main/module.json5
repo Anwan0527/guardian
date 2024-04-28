@@ -1,8 +1,19 @@
 {
   "module": {
     "requestPermissions": [{
-      "name":"ohos.permission.GET_NETWORK_INFO"
-    }
+      "name":"ohos.permission.GET_NETWORK_INFO",
+    },
+      // 日历
+      {
+        "name": "ohos.permission.READ_CALENDAR",
+        "reason": '$string:permission_reason_calendar',
+        "usedScene": {}
+      },
+      {
+        "name": "ohos.permission.WRITE_CALENDAR",
+        "reason": '$string:permission_reason_calendar',
+        "usedScene": {}
+      },
     ],
     "name": "entry",
     "type": "entry",

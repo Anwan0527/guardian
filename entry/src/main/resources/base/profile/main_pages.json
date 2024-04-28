@@ -4,6 +4,7 @@
     "pages/Battery/BatteryIndexPage",
     "pages/Settings/SettingsIndexPage",
     "pages/Settings/SettingsPermissionPage",
-    "pages/Hardware/HardwareIndexPage"
+    "pages/Hardware/HardwareIndexPage",
+    "pages/Test/PermissionTestPage"
   ]
 }
