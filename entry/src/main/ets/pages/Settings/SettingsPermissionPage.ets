@@ -1,6 +1,8 @@
 import { Permissions } from '@kit.AbilityKit';
 import { NavigationTitleBuilder } from '../../common/builders';
-import { themeManager } from '../../manager';
+import { permissionManager, themeManager } from '../../manager';
+import { promptAction } from '@kit.ArkUI';
+import { notificationManager } from '@kit.NotificationKit';
 
 interface PermissionItem {
   name: string
@@ -76,6 +78,57 @@ struct SettingsPermissionPage {
     themeManager.settingStatusBarBlack()
   }
 
+  //更新视图
+  async updatePermissionState() {
+    this.permissionList = this.permissionList.map<PermissionItem>((item) => {
+      return {
+        name: item.name,
+        title: item.title,
+        desc: item.desc,
+        permissions: item.permissions,
+        timeStamp: Date.now()
+      }
+    })
+    // 更新通知权限状态
+    this.isNotificationEnabled = await notificationManager.isNotificationEnabled()
+  }
+
+  //通知授权
+  async requestNotification() {
+    try {
+      await notificationManager.requestEnableNotification()
+      this.updatePermissionState()
+    } catch (err) {
+      permissionManager.openPermissionSettingsPage()
+    }
+  }
+
+  //申请权限
+  async requestPermission(permission: Permissions[]) {
+    const isAuth = await permissionManager.requestPermissions(permission)
+    this.updatePermissionState()
+    if (isAuth == false) permissionManager.openPermissionSettingsPage()
+
+  }
+
+  // 关闭权限，应用内无法关闭权限，弹窗提示去设置页关闭
+  async closePermission() {
+    // 弹窗确认
+    const res = await promptAction.showDialog({
+      alignment: DialogAlignment.Center,
+      title: '提示',
+      message: '关闭以上权限将不能完整使用守护助手为您提供的服务，是否需要关闭？',
+      buttons: [
+        { text: '取消', color: $r('app.color.brand') },
+        { text: '去设置关闭', color: $r('app.color.font_sub') },
+      ]
+    })
+    // 点击确定
+    if (res.index === 1) {
+      permissionManager.openPermissionSettingsPage()
+    }
+  }
+
   build() {
     Navigation() {
       Row() {
@@ -102,16 +155,32 @@ struct SettingsPermissionPage {
             .alignItems(HorizontalAlign.Start)
 
 
-            // 是否已开启权限
-            if (false) {
-              Text('已开启')
-                .fontSize(14)
-                .fontColor($r('app.color.brand'))
+            if (item.name === 'notification') {
+              if (this.isNotificationEnabled) {
+                Text('已开启')
+                  .fontSize(14)
+                  .fontColor($r('app.color.brand'))
+              } else {
+                Toggle({ type: ToggleType.Switch, isOn: false })
+                  .onChange(() => {
+                    this.requestNotification()
+                  })
+              }
             } else {
-              Toggle({ type: ToggleType.Switch, isOn: false })
-                .onChange(async () => {
-                  // TODO：更新所有权限授权状态
-                })
+              // 是否已开启权限
+              if (permissionManager.checkPermissions(item.permissions)) {
+                Text('已开启')
+                  .fontSize(14)
+                  .fontColor($r('app.color.brand'))
+              } else {
+                // ToggleType.Switch  控制外观
+                // isOn: 初始值，true 为选中，false 未选中
+                Toggle({ type: ToggleType.Switch, isOn: permissionManager.checkPermissions(item.permissions) })
+                  .onChange(async () => {
+                    // 更新所有权限授权状态
+                    this.requestPermission(item.permissions)
+                  })
+              }
             }
           }
           .width('100%')
@@ -123,7 +192,7 @@ struct SettingsPermissionPage {
           .backgroundColor(Color.Transparent)
           .margin({ top: 20 })
           .onClick(() => {
-            // TODO:关闭权限
+            this.closePermission()
           })
       }
       .width('100%')

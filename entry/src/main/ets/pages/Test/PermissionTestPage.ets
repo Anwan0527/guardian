@@ -1,4 +1,5 @@
 import { abilityAccessCtrl, bundleManager, common, Permissions } from '@kit.AbilityKit'
+import { permissionManager } from '../../manager'
 
 @Entry
 @Component
@@ -51,9 +52,14 @@ struct PermissionTestPage {
               const isAuth = this.checkAccessToken(['ohos.permission.READ_CALENDAR', 'ohos.permission.WRITE_CALENDAR'])
               AlertDialog.show({ message: JSON.stringify(isAuth) })
             })
-          Button('申请日历权限')
+          Button('申请录音权限')
             .onClick(async () => {
-              const isAuth = await this.requestPermission(['ohos.permission.READ_CALENDAR', 'ohos.permission.WRITE_CALENDAR'])
+              const isAuth = await permissionManager.requestPermissions(['ohos.permission.MICROPHONE'])
+              AlertDialog.show({ message: JSON.stringify(isAuth) })
+            })
+          Button('申请相册权限')
+            .onClick(async () => {
+              const isAuth = await permissionManager.requestPermissions(['ohos.permission.READ_IMAGEVIDEO'])
               AlertDialog.show({ message: JSON.stringify(isAuth) })
             })
           Button('权限处理')

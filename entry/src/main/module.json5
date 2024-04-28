@@ -14,6 +14,50 @@
         "reason": '$string:permission_reason_calendar',
         "usedScene": {}
       },
+      // 相机
+      {
+        "name": "ohos.permission.CAMERA",
+        "reason": '$string:permission_reason_camera',
+        "usedScene": {}
+      },
+      // 麦克风
+      {
+        "name": "ohos.permission.MICROPHONE",
+        "reason": '$string:permission_reason_microphone',
+        "usedScene": {}
+      },
+      // 位置信息
+      {
+        "name": "ohos.permission.APPROXIMATELY_LOCATION",
+        "reason": '$string:permission_reason_location',
+        "usedScene": {}
+      },
+      {
+        "name": "ohos.permission.LOCATION",
+        "reason": '$string:permission_reason_location',
+        "usedScene": {}
+      }, // 通讯录
+      {
+        "name": "ohos.permission.READ_CONTACTS",
+        "reason": '$string:permission_reason_contact',
+        "usedScene": {}
+      },
+      {
+        "name": "ohos.permission.WRITE_CONTACTS",
+        "reason": '$string:permission_reason_contact',
+        "usedScene": {}
+      },
+      // 照片
+      {
+        "name": "ohos.permission.READ_IMAGEVIDEO",
+        "reason": "$string:permission_reason_imageVideo",
+        "usedScene": {}
+      },
+      {
+        "name": "ohos.permission.WRITE_IMAGEVIDEO",
+        "reason": "$string:permission_reason_imageVideo",
+        "usedScene": {}
+      }
     ],
     "name": "entry",
     "type": "entry",

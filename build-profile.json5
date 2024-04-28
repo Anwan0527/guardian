@@ -1,6 +1,20 @@
 {
   "app": {
-    "signingConfigs": [],
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "C:\\Users\\anwan\\.ohos\\config\\default_hm_guardian_ozAG7iO0ppmTRfNRkhfl2LGVIGjhFxK8oNFRaSy8MUU=.cer",
+          "storePassword": "0000001A6D75127793B910EAC9A5E7CB7DAE14B2462765BBF881A74A1CEE887A8E26D7F43D7388C98A30",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001A56E4750AA829D8AE0D6F4968870759FC26952882460B07E594846492F203820DDEF6EE54B21D",
+          "profile": "C:\\Users\\anwan\\.ohos\\config\\default_hm_guardian_ozAG7iO0ppmTRfNRkhfl2LGVIGjhFxK8oNFRaSy8MUU=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "C:\\Users\\anwan\\.ohos\\config\\default_hm_guardian_ozAG7iO0ppmTRfNRkhfl2LGVIGjhFxK8oNFRaSy8MUU=.p12"
+        }
+      }
+    ],
     "products": [
       {
         "name": "default",
