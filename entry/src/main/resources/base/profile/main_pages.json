@@ -1,10 +1,27 @@
 {
   "src": [
     "pages/Index",
+    "pages/Hardware/HardwareIndexPage",
     "pages/Battery/BatteryIndexPage",
     "pages/Settings/SettingsIndexPage",
     "pages/Settings/SettingsPermissionPage",
-    "pages/Hardware/HardwareIndexPage",
-    "pages/Test/PermissionTestPage"
+    "pages/Calendar/CalendarIndexPage",
+    "pages/Calendar/CalendarSearchPage",
+    "pages/Calendar/CalendarKnowledgePage",
+    "pages/Calendar/CalendarOverduePage",
+    "pages/Calendar/CalendarFraudPge",
+    "pages/User/UserLoginPage",
+    "pages/Privacy/PrivacySettingsPage",
+    "pages/Privacy/PrivacyIndexPage",
+    "pages/Privacy/Auth/ForgetPasswordPage",
+    "pages/Privacy/Auth/AuthProtectPage",
+    "pages/Privacy/Auth/AuthPatternLockSettingsPage",
+    "pages/Privacy/Auth/AuthPatternLockPage",
+    "pages/Privacy/Note/NoteIndexPage",
+    "pages/Privacy/Note/NoteFormPage",
+    "pages/Privacy/Photo/PhotoPreviewPage",
+    "pages/Privacy/Photo/PhotoIndexPage",
+    "pages/Privacy/Photo/PhotoAddPage",
+    "pages/Privacy/Recorder/RecorderIndexPage"
   ]
 }

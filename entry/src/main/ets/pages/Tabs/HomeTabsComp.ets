@@ -216,13 +216,13 @@ struct HomeShortcut {
                   this.list[index] = {
                     title: '日历清理',
                     icon: $r('app.media.ic_home_shortcut_rlql'),
-                    url: '/'
+                    url: 'pages/Calendar/CalendarIndexPage'
                   }
                 } else if (item.title === '日历清理') {
                   this.list[index] = {
                     title: '隐私空间',
                     icon: $r('app.media.ic_home_shortcut_yskj'),
-                    url: '/pages/Privacy/PrivacyIndexPage'
+                    url: 'pages/Privacy/PrivacyIndexPage'
                   }
                 }
               })

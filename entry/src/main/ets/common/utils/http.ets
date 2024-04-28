@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig, Method } from '@ohos/axios';
+import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig, Method } from '@ohos/axios'
 import { BASE_URL } from '../constants';
 
 // 创建实例
