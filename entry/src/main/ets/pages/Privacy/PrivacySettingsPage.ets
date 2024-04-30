@@ -1,7 +1,8 @@
-import { router } from '@kit.ArkUI'
+import { promptAction, router } from '@kit.ArkUI'
 import { CellRowArrowComp, CellRowSwitchComp, DividerComp, TitleDividerComp } from '../../common/components'
 import { PRIVACY_SETTINGS, PrivacySettings } from '../../common/constants'
 import { showDevelopingTips } from '../../common/dev'
+import { userAuthManager } from '../../manager/UserAuthManager'
 
 interface Item {
   icon: ResourceStr
@@ -15,7 +16,7 @@ interface Item {
 struct PrivacySettingsPage {
   // 获取隐私空间设置
   @StorageLink(PRIVACY_SETTINGS) privacySettings: PrivacySettings = {}
-  @State isOpenUserAuthLock: boolean = false
+  @State @Watch('settingChange') isOpenUserAuthLock: boolean = false
   @State isOpenAntiCracking: boolean = false
   @State list: Item[] = [
     {
@@ -37,6 +38,26 @@ struct PrivacySettingsPage {
       url: 'pages/Privacy/Codebook/CodebookIndexPage'
     },
   ]
+
+  aboutToAppear(): void {
+    if (this.privacySettings.isOpenUserAuthLock) {
+      this.isOpenUserAuthLock = this.privacySettings.isOpenUserAuthLock
+    }
+  }
+
+  settingChange() {
+    if (this.isOpenUserAuthLock == true) {
+      const isSupport = userAuthManager.checkUserAuthSupport()
+      if (isSupport == false) {
+        this.isOpenUserAuthLock = false
+        promptAction.showToast({
+          message: '请先前往设置页设置锁屏密码/指纹/面容'
+        })
+      }
+    }
+    //更新持久化
+    this.privacySettings.isOpenUserAuthLock = this.isOpenUserAuthLock
+  }
 
   build() {
     Navigation() {

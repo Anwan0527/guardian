@@ -1,4 +1,4 @@
-import { router } from '@kit.ArkUI'
+import { promptAction, router } from '@kit.ArkUI'
 import { PRIVACY_SETTINGS, PrivacySettings } from '../../../common/constants'
 
 interface RouterParams {
@@ -35,7 +35,7 @@ struct AuthPatternLockSettingsPage {
     //设置错误文案
     this.errorMessage = ''
     //设置图形错误密码状态
-    this.patternLockController.setChallengeResult(PatternLockChallengeResult.WRONG)
+    this.patternLockController.setChallengeResult(PatternLockChallengeResult.CORRECT)
   }
 
   //密码输入结束时触发该回调
@@ -45,9 +45,27 @@ struct AuthPatternLockSettingsPage {
     //判断密码长度是否小于 4
     if (this.inputPassword.length < 4) {
       this.setErrorMessage('手势密码长度不能小于4位，请重新输入')
+    } else {
+      //判断是否为首次输入
+      if (this.firstPassword.length == 0) {
+        this.firstPassword = input
+        this.clearErrorMessage()
+      } else {
+        //如果已经有密码,就对比密码
+        if (input.toString() === this.firstPassword.toString()) {
+          router.pushUrl({
+            url: '/pages/Privacy/Auth/AuthProtectPage'.slice(1), //密保页
+            params: { patternPassword: this.firstPassword }//传递图形密码
+          })
+        } else {
+          this.firstPassword = []
+          this.setErrorMessage('两次密码不一致')
+        }
+      }
     }
     this.timeoutID = setTimeout(() => {
       this.patternLockController.reset()
+      this.inputPassword = []
     }, 500)
   }
 

@@ -1,5 +1,7 @@
 import { router } from '@kit.ArkUI'
 import { PRIVACY_SETTINGS, PrivacySettings } from '../../../common/constants'
+import { encryptMD5 } from '../../../common/utils/encryptMD5'
+import { userAuthManager } from '../../../manager/UserAuthManager'
 
 @Entry
 @Component
@@ -19,14 +21,55 @@ struct AuthPatternLockPage {
   // 图形密码控制器
   private patternLockController: PatternLockController = new PatternLockController()
 
+  async aboutToAppear() {
+    //是否打开面容/指纹/PIN密码
+    if (this.privacySettings.isOpenUserAuthLock) {
+      const isAuth = await userAuthManager.startUserAuth()
+      if (isAuth == true)
+        router.pushUrl({
+          url: "pages/Privacy/PrivacyIndexPage"
+        })
+    }
+
+  }
+
+  // 设置错误信息
+  setErrorMessage(message: string) {
+    // 设置错误文案
+    this.errorMessage = message
+    // 设置图形错误密码状态
+    this.patternLockController.setChallengeResult(PatternLockChallengeResult.WRONG)
+  }
+
+  clearErrorMessage() {
+    //设置错误文案
+    this.errorMessage = ''
+    //设置图形错误密码状态
+    this.patternLockController.setChallengeResult(PatternLockChallengeResult.CORRECT)
+  }
+
+  onPatternComplete(input: number[]) {
+    if (input.length < 4) {
+      this.setErrorMessage('长度小于4')
+    } else {
+      this.clearErrorMessage()
+      //对比MD5
+      if (encryptMD5(input.toString()) === this.privacySettings.patternPassword) {
+        router.pushUrl({ url: 'pages/Privacy/PrivacyIndexPage' })
+      } else {
+        this.setErrorMessage('密码错误')
+      }
+    }
+  }
+
   build() {
     Column() {
       // 标题
       Navigation() {
-        // Column() {
-        //   Text('patternPassword：' + this.privacySettings.patternPassword)
-        //   Text('passwords：' + encryptMD5(this.inputPasswords.toString()))
-        // }
+        Column() {
+          Text('patternPassword：' + this.privacySettings.patternPassword)
+          Text('passwords：' + encryptMD5(this.inputPasswords.toString()))
+        }
 
         Column({ space: 20 }) {
           Column({ space: 10 }) {
@@ -60,6 +103,7 @@ struct AuthPatternLockPage {
             })
             .onPatternComplete((input: number[]) => {
               // TODO：密码输入结束时触发该回调
+              this.onPatternComplete(input)
             })
 
           Row({ space: 20 }) {

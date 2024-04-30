@@ -1,6 +1,7 @@
 import { AbilityConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { window } from '@kit.ArkUI';
+import { router, window } from '@kit.ArkUI';
+import { PrivacySettings, PRIVACY_SETTINGS } from '../common/constants';
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
@@ -36,6 +37,12 @@ export default class EntryAbility extends UIAbility {
 
   onBackground(): void {
     // Ability has back to background
+    const routerState = router.getState()
+    if (routerState.path.includes('pages/Privacy')) {
+      router.back({
+        url: 'pages/Index'
+      })
+    }
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onBackground');
   }
 }

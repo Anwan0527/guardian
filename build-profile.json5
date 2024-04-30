@@ -5,13 +5,13 @@
         "name": "default",
         "type": "HarmonyOS",
         "material": {
-          "certpath": "C:\\Users\\anwan\\.ohos\\config\\default_hm_guardian_ozAG7iO0ppmTRfNRkhfl2LGVIGjhFxK8oNFRaSy8MUU=.cer",
-          "storePassword": "0000001A6D75127793B910EAC9A5E7CB7DAE14B2462765BBF881A74A1CEE887A8E26D7F43D7388C98A30",
+          "certpath": "C:\\Users\\anwan\\.ohos\\config\\default_guardian_cGOz7GSRhaS9n3VtLzPISBbjJOwBrdkLVY6JrcDvJ2E=.cer",
+          "storePassword": "0000001B20DAE25D7161387A8DDAAD87AB10724E83F02B3AF56405C23C2D7BDAAD17FF591D23E49D2D45E7",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001A56E4750AA829D8AE0D6F4968870759FC26952882460B07E594846492F203820DDEF6EE54B21D",
-          "profile": "C:\\Users\\anwan\\.ohos\\config\\default_hm_guardian_ozAG7iO0ppmTRfNRkhfl2LGVIGjhFxK8oNFRaSy8MUU=.p7b",
+          "keyPassword": "0000001B5BAF5CE9F278384C079E4CD2F84DDDD1CD640F34965937AB322C1D40A74CF204FE452D648B4FC5",
+          "profile": "C:\\Users\\anwan\\.ohos\\config\\default_guardian_cGOz7GSRhaS9n3VtLzPISBbjJOwBrdkLVY6JrcDvJ2E=.p7b",
           "signAlg": "SHA256withECDSA",
-          "storeFile": "C:\\Users\\anwan\\.ohos\\config\\default_hm_guardian_ozAG7iO0ppmTRfNRkhfl2LGVIGjhFxK8oNFRaSy8MUU=.p12"
+          "storeFile": "C:\\Users\\anwan\\.ohos\\config\\default_guardian_cGOz7GSRhaS9n3VtLzPISBbjJOwBrdkLVY6JrcDvJ2E=.p12"
         }
       }
     ],

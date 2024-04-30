@@ -57,6 +57,9 @@
         "name": "ohos.permission.WRITE_IMAGEVIDEO",
         "reason": "$string:permission_reason_imageVideo",
         "usedScene": {}
+      },{
+        // 用户身份认证
+        "name": "ohos.permission.ACCESS_BIOMETRIC"
       }
     ],
     "name": "entry",

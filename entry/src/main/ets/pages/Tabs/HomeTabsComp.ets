@@ -117,10 +117,14 @@ struct HomeEntry {
   }
 }
 
+// 通过持久化存储隐私空间的状态
+PersistentStorage.persistProp('isHidePrivacy', false)
+
 @Component
 struct HomeShortcut {
+  @StorageLink('isHidePrivacy') isHidePrivacy: boolean = false
   // 监听 AppStorage 的数据变化，注意 @Watch 的书写位置
-  @StorageLink(PRIVACY_SETTINGS) privacySettings: PrivacySettings = {}
+  @StorageLink(PRIVACY_SETTINGS) @Watch('privacySettingsChange') privacySettings: PrivacySettings = {}
   @State list: IconItem[] = [
     {
       title: '手机瘦身',
@@ -154,27 +158,60 @@ struct HomeShortcut {
     },
   ]
 
-  async openShortcutPage(item: IconItem) {
-    // 跳转页面
+  // 打开页面
+  openItemPage(item: IconItem) {
     if (item.url === '/') {
+      // 开发中提示
       showDevelopingTips()
-      return
+    } else {
+      // 跳转页面
+      router.pushUrl({ url: item.url.slice(1) })
     }
-    if (item.title === '隐私空间') {
-      this.openPrivacyPage()
-      return
-    }
-    router.pushUrl({ url: item.url.slice(1) })
   }
 
-  // 打开隐私空间
-  openPrivacyPage() {
-    if (!this.privacySettings.patternPassword) {
-      // 如果还没设置过图形密码，跳转到设置页
-      router.pushUrl({ url: 'pages/Privacy/Auth/AuthPatternLockSettingsPage' })
+  // 长按切换隐私空间入口
+  togglePrivacyEntry(item: IconItem) {
+    // 更新持久化的值
+    this.isHidePrivacy = !this.isHidePrivacy
+    // 更新入口
+    this.updateEntry()
+  }
+
+  aboutToAppear() {
+    this.updateEntry()
+  }
+
+  // 持久化值更新时，主动更新隐私空间入口链接
+  privacySettingsChange() {
+    this.updateEntry()
+  }
+
+  // 更新入口
+  updateEntry() {
+    // 隐私空间入口
+    const privacyItem: IconItem = {
+      title: '隐私空间',
+      icon: $r('app.media.ic_home_shortcut_yskj'),
+      url: '/pages/Privacy/PrivacyIndexPage'
+    }
+    // 有图形密码，校验图形密码
+    if (this.privacySettings.patternPassword) {
+      privacyItem.url = '/pages/Privacy/Auth/AuthPatternLockPage'
     } else {
-      // 已设置图形密码，跳转到解锁页
-      router.pushUrl({ url: 'pages/Privacy/Auth/AuthPatternLockPage' })
+      // 无图形密码，设置图形密码
+      privacyItem.url = '/pages/Privacy/Auth/AuthPatternLockSettingsPage'
+    }
+    // 日历清理入口
+    const calendarItem: IconItem = {
+      title: '日历清理',
+      icon: $r('app.media.ic_home_shortcut_rlql'),
+      url: '/pages/Calendar/CalendarIndexPage'
+    }
+    // 根据持久化的值，切换显示入口
+    if (this.isHidePrivacy === true) {
+      this.list[2] = calendarItem
+    } else {
+      this.list[2] = privacyItem
     }
   }
 
@@ -203,27 +240,19 @@ struct HomeShortcut {
             radius: 18,
             color: '#4DE4E4E4'
           })
+          // 单击
           .onClick(() => {
-            this.openShortcutPage(item)
+            // 打开页面
+            this.openItemPage(item)
           })
           // 绑定优先识别手势
-          .priorityGesture(
-            // 长按
-            LongPressGesture({ duration: 1000 })
+          .gesture(
+            // 长按手势
+            LongPressGesture({ fingers: 1 })
               .onAction(() => {
-                // 隐藏隐私空间入口
-                if (item.title === '隐私空间') {
-                  this.list[index] = {
-                    title: '日历清理',
-                    icon: $r('app.media.ic_home_shortcut_rlql'),
-                    url: 'pages/Calendar/CalendarIndexPage'
-                  }
-                } else if (item.title === '日历清理') {
-                  this.list[index] = {
-                    title: '隐私空间',
-                    icon: $r('app.media.ic_home_shortcut_yskj'),
-                    url: 'pages/Privacy/PrivacyIndexPage'
-                  }
+                // 下标为 2 的入口可切换成 隐私空间/日历清理
+                if (index === 2) {
+                  this.togglePrivacyEntry(item)
                 }
               })
           )

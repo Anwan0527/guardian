@@ -1,9 +1,12 @@
 // DONE: 未输入内容时，点击下一步，输入框的 placeholder 文案抖动
 import { PRIVACY_QUESTION_LIST, PRIVACY_SETTINGS, PrivacySettings } from '../../../common/constants';
+import { promptAction, router } from '@kit.ArkUI';
+import { encryptMD5 } from '../../../common/utils/encryptMD5';
 
 interface RouterParams {
   patternPassword?: number[]
 }
+
 
 @Entry
 @Component
@@ -21,6 +24,33 @@ struct AuthProtect {
   // 路由参数
   @State routerParams: RouterParams = {}
 
+  aboutToAppear() {
+    if (router.getParams() as RouterParams)
+      this.routerParams = router.getParams() as RouterParams
+  }
+
+  async onSubmit() {
+    if (this.answerText == '') {
+      this.errorMessage = '密保问题不能为空'
+      this.inputPaddingLeft = 14
+    } else {
+      const res = await promptAction.showDialog({
+        title: '温馨提示',
+        message: `你设定的密码保护问题如下\n问题：${PRIVACY_QUESTION_LIST[this.activeIndex].value}\n答案：${this.answerText}\n请确保能够牢记！`,
+        buttons: [
+          { text: '取消', color: $r('app.color.font_sub') },
+          { text: '确定', color: $r('app.color.brand') },
+        ]
+      })
+      if (res.index = 1) {
+        this.privacySettings.patternPassword = encryptMD5(this.routerParams.patternPassword!.toString()) //图案密码
+        this.privacySettings.protectQuestionIndex = this.activeIndex //密保问题
+        this.privacySettings.protectQuestionAnswer = encryptMD5(this.answerText) //密保答案
+        router.pushUrl({ url: 'pages/Privacy/PrivacyIndexPage' })
+      }
+    }
+  }
+
   @Builder
   NavigationMenus() {
     Row() {
@@ -29,6 +59,7 @@ struct AuthProtect {
         .fontColor($r('app.color.font'))
         .onClick(() => {
           // TODO：完成
+          this.onSubmit()
         })
     }
     .height('100%')
@@ -76,6 +107,7 @@ struct AuthProtect {
               .padding(0)
               .onSubmit(() => {
                 // TODO：提交密保问题答案
+                this.onSubmit()
               })
           }
           .border({ width: { bottom: 1 }, color: $r('app.color.border'), radius: 0 })
