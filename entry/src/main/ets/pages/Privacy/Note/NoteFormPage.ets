@@ -1,4 +1,7 @@
 // 页面参数
+import { privacynoteDB } from '../../../common/database'
+import { promptAction, router } from '@kit.ArkUI'
+
 interface RouterParams {
   id?: number
 }
@@ -13,6 +16,62 @@ struct NoteDetailPage {
   // 页面参数
   @State routerParams: RouterParams = {}
 
+  aboutToAppear(): void {
+    if (router.getParams())
+      this.routerParams = router.getParams() as RouterParams
+  }
+
+  onBackPress() {
+    // 如果是新增，且标题非空
+    if (this.title.trim() !== '') {
+      // 弹窗确认
+      AlertDialog.show({
+        alignment: DialogAlignment.Center,
+        title: '提示',
+        message: '您输入的内容还没有保存，是否放弃？',
+        buttons: [
+        // 放弃,返回上一页
+          {
+            value: '放弃', action: () => {
+            router.back()
+          }
+          },
+          // 继续编辑
+          {
+            value: '继续编辑', action: () => {
+          }
+          },
+        ]
+      })
+      return true // 不返回上一页，通过弹窗处理是否返回
+    } else {
+      return false // 正常返回上一页
+    }
+  }
+
+  async onSubmit() {
+    //如果有id->更新笔记
+    if (this.routerParams.id) {
+      await privacynoteDB.update({
+        id: this.routerParams.id,
+        title: this.title,
+        content: this.content,
+        date_added: Date.now()
+      })
+    } else { //没有->新建
+      await privacynoteDB.insert({
+        id: null,
+        title: this.title,
+        content: this.content,
+        date_added: Date.now()
+      })
+    }
+    promptAction.showToast({
+      message: '笔记加密完成'
+    })
+    router.back()
+  }
+
   @Builder
   NavigationMenus() {
     Row() {
@@ -22,6 +81,7 @@ struct NoteDetailPage {
         .enabled(this.title.trim() !== '')
         .onClick(() => {
           // TODO：保存/新增
+          this.onSubmit()
         })
     }
     .height('100%')

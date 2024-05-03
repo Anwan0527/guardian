@@ -1,21 +1,27 @@
 // TODO: 增加删除动画效果
-import { router } from '@kit.ArkUI'
+import { promptAction, router } from '@kit.ArkUI'
 import dayjs from 'dayjs'
 import { EmptyTipsComp } from '../../../common/components/EmptyTips'
-
-// 隐私笔记
-interface NoteItem {
-  id: number | null
-  title: string
-  content: string
-  time: number
-}
+import { privacynoteDB, PrivacynoteDBInfo } from '../../../common/database'
 
 
 @Entry
 @Component
 struct NoteIndexPage {
-  @State list: NoteItem[] = []
+  @State list: PrivacynoteDBInfo[] = []
+
+  onPageShow(): void {
+    this.getData()
+  }
+
+  async deleteData(id: number) {
+    await privacynoteDB.delete(id)
+    this.getData()
+  }
+
+  async getData() {
+    this.list = await privacynoteDB.query()
+  }
 
   @Builder
   swipeActionEnd(id: number) {
@@ -26,7 +32,7 @@ struct NoteIndexPage {
         .aspectRatio(1)
         .backgroundColor('#FF5E5D')
         .onClick(() => {
-          // TODO：删除
+          this.deleteData(id)
         })
     }
     .height('100%')
@@ -42,6 +48,10 @@ struct NoteIndexPage {
           .fontColor($r('app.color.font'))
           .onClick(() => {
             // 编辑
+            router.pushUrl({
+              url: 'pages/Privacy/Note/NoteFormPage',
+              params: this.list
+            })
           })
       }
     }
@@ -55,14 +65,14 @@ struct NoteIndexPage {
         if (this.list.length) {
           Column() {
             List() {
-              ForEach(this.list, (item: NoteItem) => {
+              ForEach(this.list, (item: PrivacynoteDBInfo) => {
                 ListItem() {
                   Row() {
                     Column() {
                       Text(item.title)
                         .fontSize(16)
                         .fontColor($r('app.color.font2'))
-                      Text(dayjs(item.time)
+                      Text(dayjs(item.date_added)
                         .format('YYYY年MM月DD日'))
                         .fontSize(12)
                         .fontColor($r('app.color.font_sub'))
@@ -94,7 +104,8 @@ struct NoteIndexPage {
                     },
                     onAction: () => {
                       animateTo({ duration: 1000 }, () => {
-                        // TODO：侧滑删除
+                        // 侧滑删除
+                        this.deleteData(item.id)
                       })
                     },
                     actionAreaDistance: 56,

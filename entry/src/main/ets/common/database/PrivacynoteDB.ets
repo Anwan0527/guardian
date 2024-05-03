@@ -1,6 +1,6 @@
 import { relationalStore, ValuesBucket } from '@kit.ArkData'
 
-interface PrivacynoteDBInfo extends ValuesBucket {
+export interface PrivacynoteDBInfo extends ValuesBucket {
   id: number | null,
   title: string,
   content: string,
