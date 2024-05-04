@@ -6,9 +6,9 @@
         "type": "HarmonyOS",
         "material": {
           "certpath": "C:\\Users\\anwan\\.ohos\\config\\default_guardian_cGOz7GSRhaS9n3VtLzPISBbjJOwBrdkLVY6JrcDvJ2E=.cer",
-          "storePassword": "0000001B20DAE25D7161387A8DDAAD87AB10724E83F02B3AF56405C23C2D7BDAAD17FF591D23E49D2D45E7",
+          "storePassword": "0000001BE45ABF9A09799D2BCFE5551EFEB2AE7FAA419F2754DDABAB762BB850EFA86F7948E22D64FB5BF4",
           "keyAlias": "debugKey",
-          "keyPassword": "0000001B5BAF5CE9F278384C079E4CD2F84DDDD1CD640F34965937AB322C1D40A74CF204FE452D648B4FC5",
+          "keyPassword": "0000001BB3F407743F3617F7893A2D9B7D6A9455508C98322CAD655CB38E1C4952DA11A19FE6DF4396FEBE",
           "profile": "C:\\Users\\anwan\\.ohos\\config\\default_guardian_cGOz7GSRhaS9n3VtLzPISBbjJOwBrdkLVY6JrcDvJ2E=.p7b",
           "signAlg": "SHA256withECDSA",
           "storeFile": "C:\\Users\\anwan\\.ohos\\config\\default_guardian_cGOz7GSRhaS9n3VtLzPISBbjJOwBrdkLVY6JrcDvJ2E=.p12"
