@@ -49,8 +49,7 @@ struct NoteIndexPage {
           .onClick(() => {
             // 编辑
             router.pushUrl({
-              url: 'pages/Privacy/Note/NoteFormPage',
-              params: this.list
+              url: 'pages/Privacy/Note/NoteFormPage'
             })
           })
       }

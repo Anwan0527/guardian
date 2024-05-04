@@ -1,6 +1,9 @@
 // 页面参数
 import { privacynoteDB } from '../../../common/database'
 import { promptAction, router } from '@kit.ArkUI'
+import { systemShare } from '@kit.ShareKit'
+import { uniformTypeDescriptor } from '@kit.ArkData'
+import { common } from '@kit.AbilityKit'
 
 interface RouterParams {
   id?: number
@@ -16,9 +19,38 @@ struct NoteDetailPage {
   // 页面参数
   @State routerParams: RouterParams = {}
 
-  aboutToAppear(): void {
-    if (router.getParams())
+  async aboutToAppear() {
+    if (router.getParams()) {
       this.routerParams = router.getParams() as RouterParams
+      const list = await privacynoteDB.query(this.routerParams.id)
+      if (list[0]) {
+        this.title = list[0].title
+        this.content = list[0].content
+      }
+    }
+  }
+
+  //分享隐私日记
+  shareData() {
+    //构建分享数据
+    const shareData = new systemShare.SharedData({
+      utd: uniformTypeDescriptor.UniformDataType.TEXT,
+      title: this.title,
+      content: this.content
+    })
+    //显示分享面板
+    const shareController = new systemShare.ShareController(shareData)
+    shareController.show(getContext() as common.UIAbilityContext, {
+      previewMode: systemShare.SharePreviewMode.DEFAULT,
+      selectionMode: systemShare.SelectionMode.SINGLE
+    })
+  }
+
+  //删除笔记
+  async deleteData(id?: number) {
+    if (id)
+      await privacynoteDB.delete(id)
+    router.back()
   }
 
   onBackPress() {
@@ -105,6 +137,7 @@ struct NoteDetailPage {
             })
             .onSubmit(() => {
               // TODO：提交表单(保存/新增)
+              this.onSubmit()
             })
           Text('内容')
             .fontSize(14)
@@ -131,6 +164,7 @@ struct NoteDetailPage {
               .layoutWeight(1)
               .onClick(() => {
                 // TODO：删除
+                this.deleteData(this.routerParams.id)
               })
             Button('分享')
               .type(ButtonType.Normal)
@@ -139,6 +173,7 @@ struct NoteDetailPage {
               .layoutWeight(1)
               .onClick(() => {
                 // TODO：分享
+                this.shareData()
               })
           }
           .padding({ bottom: 80 })
