@@ -16,7 +16,7 @@ class AudioCapturerManager {
   private permissions: Permissions[] = ["ohos.permission.MICROPHONE"]
   //音频渲染器配置
   private audioRendererInfo: audio.AudioRendererInfo = {
-    usage: audio.StreamUsage.STREAM_USAGE_MUSIC, //播放类型
+    usage: audio.StreamUsage.STREAM_USAGE_MOVIE, //播放类型
     rendererFlags: 0
   }
   //音频渲染器实例
@@ -133,16 +133,20 @@ class AudioCapturerManager {
     const audioRenderer = await this.getAudioRenderer()
     let bufferSize: number = 0 //偏移量
     const file = fileIo.openSync(filePath)
-    audioRenderer.on('writeData', buffer => {
+    // 获取文件信息，如果读取时已经超出文件大小，自动停止
+    const stat = fileIo.statSync(file.fd)
+    audioRenderer.on('writeData', async buffer => {
       fileIo.readSync(file.fd, buffer, { offset: bufferSize, length: buffer.byteLength })
       bufferSize += buffer.byteLength
       //测试用的
       promptAction.showToast({
         message: bufferSize.toString()
       })
-      const stat = fileIo.statSync(file.fd)
+
       if (bufferSize >= stat.size) {
-        this.stopRecorder()
+        await audioRenderer.stop() // 停止
+        audioRenderer.release() // 释放资源
+        this.audioRenderer = null // 清理变量
       }
     })
     audioRenderer.start()
@@ -151,9 +155,15 @@ class AudioCapturerManager {
   // 停止播放录音
   async stopRenderer() {
     const audioRenderer = await this.getAudioRenderer()
-    await audioRenderer.stop()
-    audioRenderer.release()
-    this.audioRenderer = null
+    if (
+      audioRenderer.state === audio.AudioState.STATE_RUNNING
+        ||
+        audioRenderer.state === audio.AudioState.STATE_PAUSED
+    ) {
+      await audioRenderer.stop() // 停止
+      audioRenderer.release() // 释放资源
+      this.audioRenderer = null // 清理变量
+    }
   }
 }
 
