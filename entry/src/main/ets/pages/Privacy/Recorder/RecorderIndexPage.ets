@@ -1,7 +1,13 @@
 import { ValuesBucket } from '@kit.ArkData'
 import dayjs from 'dayjs'
+import duration from 'dayjs/plugin/duration'
 import { EmptyTipsComp } from '../../../common/components'
 import { CustomInputDialog } from '../../../common/dialog'
+import { audioCapturerManager } from '../../../manager'
+import { fileIo } from '@kit.CoreFileKit'
+import { PRIVACY_RECORDER_FOLDER } from '../../../common/constants'
+import { privacyRecorderDB } from '../../../common/database'
+import { deviceInfo } from '@kit.BasicServicesKit'
 
 export interface PrivacyRecorderDBInfo extends ValuesBucket {
   id: number | null // 新增时 id 为 null ，自动生成自增 id
@@ -10,6 +16,8 @@ export interface PrivacyRecorderDBInfo extends ValuesBucket {
   date_added: number
   duration: number
 }
+
+dayjs.extend(duration)
 
 @Entry
 @Component
@@ -30,6 +38,7 @@ struct RecorderIndexPage {
       inputText: this.tempInputText,
       onConfirm: async () => {
         // TODO：重命名录音
+        this.renameRecorder()
       },
     }),
     autoCancel: true,
@@ -38,6 +47,152 @@ struct RecorderIndexPage {
   })
   private playingTimerId: number = -1
   private recordingTimerId: number = -1
+
+  //重命名录音
+  async renameRecorder() {
+    if (this.activeItem) {
+      await privacyRecorderDB.update({
+        title: this.tempInputText,
+        id: this.activeItem.id,
+        date_added: this.activeItem.date_added,
+        duration: this.activeItem.duration,
+        filePath: this.activeItem.filePath
+      })
+      this.getList()
+    }
+  }
+
+  //删除录音
+  async deleteRecorder(item: PrivacyRecorderDBInfo) {
+    if (deviceInfo.marketName !== 'emulator') {
+      audioCapturerManager.stopRenderer()
+    }
+    //删除数据库
+    if (item.id) {
+      await privacyRecorderDB.delete(item.id)
+    }
+    //获取列表
+    this.getList()
+    //删除文件
+    fileIo.unlink(item.filePath)
+  }
+
+  //开始播放
+  playRecorder(item: PrivacyRecorderDBInfo) {
+    this.activeItem = item
+    if (this.isPlaying == false) {
+      //如果没播放——>更新播放状态
+      this.isPlaying = true
+      this.startPlayingCount()
+      audioCapturerManager.startRenderer(item.filePath)
+    } else {
+      this.isPlaying = false
+      this.stopPlayingCount()
+      audioCapturerManager.stopRenderer()
+    }
+  }
+
+  // 开启播放进度条
+  startPlayingCount() {
+    this.playingTime = 0
+    // 时间间隔
+    const interval = 20
+    clearInterval(this.playingTimerId)
+    this.playingTimerId = setInterval(() => {
+      // 累加进度条
+      this.playingTime += interval
+      if (this.playingTime >= this.activeItem!.duration) {
+        this.stopPlayingCount()
+      }
+    }, interval)
+  }
+
+  // 结束播放进度条
+  stopPlayingCount() {
+    this.isPlaying = false
+    clearInterval(this.playingTimerId)
+  }
+
+  //开始录音
+  startCapturer() {
+    this.isRecording = true
+    this.startCounter()
+    const context = getContext()
+    const filePath = context.filesDir + '/' + PRIVACY_RECORDER_FOLDER + '/' + Date.now() + '.wav'
+    // AlertDialog.show({
+    //   message: JSON.stringify(filePath)
+    // })
+    audioCapturerManager.startCapturer(filePath)
+  }
+
+  //结束录音
+  async stopCapturer() {
+    this.isRecording = false
+    this.stopCounter()
+    // 如果是模拟器 emulator ，直接模拟写入数据库，查询列表，用于测试进度条
+    if (deviceInfo.marketName === 'emulator') {
+      await privacyRecorderDB.insert({
+        id: null,
+        filePath: '/',
+        title: '测试用的录音标题',
+        date_added: Date.now(),
+        duration: this.recordingTime * 1000
+      })
+      this.getList()
+      return
+    }
+    const audioInfo = await audioCapturerManager.stopCapturer()
+    //写入数据库
+    await privacyRecorderDB.insert({
+      id: null,
+      filePath: audioInfo.filePath,
+      title: '录音' + audioInfo.date_added,
+      date_added: audioInfo.date_added,
+      duration: audioInfo.duration
+    })
+    this.getList()
+  }
+
+  async getList() {
+    this.list = await privacyRecorderDB.query()
+  }
+
+  //开始计时
+  startCounter() {
+    //初始化
+    this.recordingTime = 0
+    //清除以前计时器
+    clearInterval(this.recordingTimerId)
+    //开启定时器
+    this.recordingTimerId = setInterval(() => {
+      this.recordingTime++
+    }, 1000)
+  }
+
+  //结束计时
+  stopCounter() {
+    clearTimeout(this.recordingTimerId)
+  }
+
+  aboutToAppear() {
+    //获取录音权限
+    audioCapturerManager.requestPermissions()
+    this.initFolder() //初始化
+    this.getList()
+  }
+
+  // 初始化隐私录音目录，如果文件夹不存在先创建文件夹
+  initFolder() {
+    //上下文
+    const context = getContext()
+    //目录
+    const fileDir = context.filesDir
+    //获取文件夹
+    const list = fileIo.listFileSync(fileDir)
+    if (list.includes(PRIVACY_RECORDER_FOLDER) == false) {
+      fileIo.mkdirSync(fileDir + '/' + PRIVACY_RECORDER_FOLDER)
+    }
+  }
 
   @Builder
   NavigationMenus() {
@@ -54,7 +209,7 @@ struct RecorderIndexPage {
   }
 
   @Builder
-  ListItemSwipeActionEnd() {
+  ListItemSwipeActionEnd(item: PrivacyRecorderDBInfo) {
     Row() {
       Button("重命名")
         .type(ButtonType.Normal)
@@ -63,6 +218,11 @@ struct RecorderIndexPage {
         .backgroundColor('#CECFCF')
         .onClick(() => {
           // TODO：录音重命名
+          this.dialogController.open()
+          this.tempInputText = item.title //传参
+          // 3. 保存当前点击的信息
+          this.activeItem = item
+
         })
       Button("删除")
         .type(ButtonType.Normal)
@@ -71,6 +231,7 @@ struct RecorderIndexPage {
         .backgroundColor('#FF5E5D')
         .onClick(() => {
           // TODO：删除录音
+          this.deleteRecorder(item)
         })
     }
     .height('100%')
@@ -99,6 +260,7 @@ struct RecorderIndexPage {
                               .fontSize(12)
                               .fontColor($r('app.color.font_sub'))
                             Progress({
+                              //进度条
                               value: this.playingTime,
                               total: item.duration,
                             })
@@ -123,7 +285,8 @@ struct RecorderIndexPage {
                           .width(22)
                           .aspectRatio(1)
                           .fillColor('#A6B6C4')
-                        Text(item.duration + 'mm:ss')
+
+                        Text(dayjs.duration(item.duration, 'milliseconds').format('mm:ss').toString())
                           .fontSize(12)
                           .fontColor('#A6B6C4')
                           .lineHeight(25)
@@ -132,6 +295,7 @@ struct RecorderIndexPage {
                       .height('100%')
                       .onClick(() => {
                         // TODO：播放音频
+                        this.playRecorder(item)
                       })
                     }
                     .width('100%')
@@ -142,7 +306,7 @@ struct RecorderIndexPage {
                   .transition({ type: TransitionType.Delete, opacity: 0 })
                   .swipeAction({
                     end: {
-                      builder: this.ListItemSwipeActionEnd(),
+                      builder: this.ListItemSwipeActionEnd(item),
                       onStateChange: (state) => {
                         if (state === SwipeActionState.EXPANDED) {
                           // 保存当前滑动的数据
@@ -178,6 +342,7 @@ struct RecorderIndexPage {
             .aspectRatio(1)
             .onClick(() => {
               // TODO：开始录音
+              this.startCapturer()
             })
         }
         .width('100%')
@@ -222,7 +387,7 @@ struct RecorderIndexPage {
           .margin({ top: 40 })
 
           Text(
-            dayjs(this.recordingTime)
+            dayjs.duration(this.recordingTime, 'seconds')
               .format(this.recordingTime > 1000 * 60 * 60 ? 'HH:mm:ss' : 'mm:ss')
           )
             .fontSize(18)
@@ -239,6 +404,7 @@ struct RecorderIndexPage {
               .borderRadius(10)
               .onClick(() => {
                 // TODO：停止录音
+                this.stopCapturer()
               })
           }
           .padding({ left: 15, right: 15 })

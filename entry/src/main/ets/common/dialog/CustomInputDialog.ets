@@ -50,7 +50,9 @@ export struct CustomInputDialog {
             // 关闭弹窗
             this.controller?.close()
             // 执行取消
-            if (this.onCancel) this.onCancel()
+            if (this.onCancel) {
+              this.onCancel()
+            }
           })
         Button('确定')
           .fontSize(16)
@@ -67,7 +69,9 @@ export struct CustomInputDialog {
             // 更新 @Link 的值
             this.inputText = this.tempInputText
             // 执行确定
-            if (this.onConfirm) this.onConfirm()
+            if (this.onConfirm) {
+              this.onConfirm()
+            }
           })
       }
       .margin({ top: 10 })

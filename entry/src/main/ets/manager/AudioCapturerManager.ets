@@ -90,13 +90,14 @@ class AudioCapturerManager {
   }
 
   //开始录音
-  async startRecorder(filePath: string) {
+  async startCapturer(filePath: string) {
+    // 根据 filePath 打开文件，可读可写模式，如果文件不存在自动创建
+    const file = fileIo.openSync(filePath, fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.CREATE)
     // 1. 获取音频采集器
     const audioCapturer = await this.getAudioCapturer()
     // 偏移值
     let bufferSize: number = 0
-    // 根据 filePath 打开文件，可读可写模式，如果文件不存在自动创建
-    const file = fileIo.openSync(filePath, fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.CREATE)
+
     // 2. 调用on('readData')方法，订阅监听音频数据读入回调
     audioCapturer.on('readData', (buffer) => {
       // 把采集的音频信息写入到打开的文件中
@@ -115,7 +116,7 @@ class AudioCapturerManager {
   }
 
   //结束录音
-  async stopRecorder(): Promise<AudioInfo> {
+  async stopCapturer(): Promise<AudioInfo> {
     // 获取音频采集器
     const audioCapturer = await this.getAudioCapturer()
     await audioCapturer.stop() // 停止采集
@@ -130,11 +131,12 @@ class AudioCapturerManager {
 
   //播放录音
   async startRenderer(filePath: string) {
-    const audioRenderer = await this.getAudioRenderer()
-    let bufferSize: number = 0 //偏移量
+
     const file = fileIo.openSync(filePath)
     // 获取文件信息，如果读取时已经超出文件大小，自动停止
     const stat = fileIo.statSync(file.fd)
+    const audioRenderer = await this.getAudioRenderer()
+    let bufferSize: number = 0 //偏移量
     audioRenderer.on('writeData', async buffer => {
       fileIo.readSync(file.fd, buffer, { offset: bufferSize, length: buffer.byteLength })
       bufferSize += buffer.byteLength

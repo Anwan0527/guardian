@@ -45,6 +45,7 @@
     "pages/Guard/Outdoor/GuardPolicePage",
     "pages/Test/UserAuthTestPage",
     "pages/Test/RDBstoretestPage",
-    "pages/Test/AudioCaptureTsetPage"
+    "pages/Test/AudioCaptureTsetPage",
+    "pages/Test/WlangetpassageTextPage"
   ]
 }
