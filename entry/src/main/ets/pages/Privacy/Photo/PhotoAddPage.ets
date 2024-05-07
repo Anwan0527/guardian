@@ -4,6 +4,8 @@ import { fileIo, fileUri } from '@kit.CoreFileKit'
 import { PRIVACY_PHOTO_FOLDER } from '../../../common/constants'
 import { privacyPhotoDB, PrivacyPhotoDBInfo } from '../../../common/database'
 import { router } from '@kit.ArkUI'
+import { camera, cameraPicker } from '@kit.CameraKit'
+import { photoAccessHelper } from '@kit.MediaLibraryKit'
 
 // 图片和视频文件关键信息。(PhotoKeys)
 export interface PhotoInfo {
@@ -43,6 +45,37 @@ struct PhotoAddPage {
 
   async getPhotoes() {
     this.photos = await photoManager.getPhotoes()
+  }
+
+  async takePhoto() {
+    //相机拍照
+    const context = getContext()
+    //准备隐私相册路径
+    const filePath = context.filesDir + '/' + PRIVACY_PHOTO_FOLDER + '/' + Date.now() + '.jpg'
+    //参数要求文件可写
+    fileIo.openSync(filePath, fileIo.OpenMode.READ_WRITE | fileIo.OpenMode.CREATE)
+    //把path 转成uri
+    const saveUri = fileUri.getUriFromPath(filePath)
+
+    //相机选择器
+    const pickerResult = await cameraPicker.pick(
+      getContext(),
+      [cameraPicker.PickerMediaType.PHOTO],
+      {
+        cameraPosition: camera.CameraPosition.CAMERA_POSITION_BACK, //后置摄像头
+        saveUri: saveUri//保存路径，不设置默认系统相册
+      }
+    )
+    if (pickerResult.resultUri) {
+      //写入数据库
+      await privacyPhotoDB.insert({
+        id: null,
+        mediaUri: '', //隐私相册拍照 没有Uri
+        privacyUri: pickerResult.resultUri,
+        media_type: photoAccessHelper.PhotoType.IMAGE,
+        date_added: Date.now()
+      })
+    }
   }
 
   //添加图片下一步
@@ -93,6 +126,7 @@ struct PhotoAddPage {
         .aspectRatio(1)
         .onClick(() => {
           // TODO：拍照
+          this.takePhoto()
         })
     }
     .height('100%')
