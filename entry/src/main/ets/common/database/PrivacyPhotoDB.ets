@@ -99,7 +99,7 @@ class PrivacyPhotoDB {
         mediaUri: resultSet.getString(resultSet.getColumnIndex('mediaUri')),
         privacyUri: resultSet.getString(resultSet.getColumnIndex('privacyUri')),
         media_type: resultSet.getLong(resultSet.getColumnIndex('media_type')),
-        date_added: resultSet.getLong(resultSet.getColumnIndex('date_added')) * 1000,
+        date_added: resultSet.getLong(resultSet.getColumnIndex('date_added')),
       }
       // 追加到数组中
       list.push(data)

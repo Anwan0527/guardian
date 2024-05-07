@@ -3,6 +3,7 @@ import { photoManager } from '../../../manager'
 import { fileIo, fileUri } from '@kit.CoreFileKit'
 import { PRIVACY_PHOTO_FOLDER } from '../../../common/constants'
 import { privacyPhotoDB, PrivacyPhotoDBInfo } from '../../../common/database'
+import { router } from '@kit.ArkUI'
 
 // 图片和视频文件关键信息。(PhotoKeys)
 export interface PhotoInfo {
@@ -46,6 +47,8 @@ struct PhotoAddPage {
 
   //添加图片下一步
   async copyPhotosToPrivacy() {
+    this.completeCount = 0
+    this.isEncrypting = true
     const promiseTasks = this.selectUris.map(async uri => {
       //打开文件
       const originFile = fileIo.openSync(uri)
@@ -65,16 +68,20 @@ struct PhotoAddPage {
           date_added: item.date_added
         }
         //返回promise数据
+        this.completeCount++
         return Promise.resolve(data)
       } else {
         return Promise.reject()
       }
     })
     const list = await Promise.all(promiseTasks)
-    AlertDialog.show({
-      message: JSON.stringify(list)
-    })
     await privacyPhotoDB.batchInsert(list)
+
+  }
+
+  //删除图片
+  async deletePhotos() {
+    photoManager.deletePhotos(this.selectUris)
   }
 
   // 导航右侧自定义菜单
@@ -324,6 +331,7 @@ struct PhotoAddPage {
               .width('100%')
               .onClick(() => {
                 // TODO：删除照片原图
+                this.deletePhotos()
               })
             Button('完成')
               .type(ButtonType.Normal)
@@ -333,6 +341,7 @@ struct PhotoAddPage {
               .width('100%')
               .onClick(() => {
                 // TODO：关闭加密界面
+                router.back()
               })
           }
           .margin({ left: 20, right: 20, bottom: 20 })

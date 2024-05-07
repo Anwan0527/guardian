@@ -1,10 +1,11 @@
-
 import { router } from '@kit.ArkUI'
 import { EmptyTipsComp } from '../../../common/components'
 import { photoManager } from '../../../manager'
 import { fileIo } from '@kit.CoreFileKit'
 import { PRIVACY_PHOTO_FOLDER } from '../../../common/constants'
-import { PrivacyPhotoDBInfo } from './PhotoPreviewPage'
+import { privacyPhotoDB, PrivacyPhotoDBInfo } from '../../../common/database'
+import _ from '@wolfx/lodash'
+import dayjs from 'dayjs'
 
 
 interface RouterParams {
@@ -32,6 +33,7 @@ struct PhotoIndexPage {
     photoManager.requestPermissions()
     this.initPhotosFolder()
   }
+
   // 初始化隐私相册目录，如果文件夹不存在先创建文件夹
   initPhotosFolder() {
     // 获取应用上下文
@@ -47,6 +49,23 @@ struct PhotoIndexPage {
       fileIo.mkdirSync(filesDir + '/' + PRIVACY_PHOTO_FOLDER)
     }
   }
+
+  onPageShow(): void {
+    this.getList()
+  }
+
+  async getList() {
+    const list = await privacyPhotoDB.query()
+    const groupData = _.groupBy(list, item => dayjs(item.date_added)
+      .format('YYYY-MM-DD'))
+    this.groupList = _.map(groupData, (value, key): GroupItem => {
+      return {
+        date: key,
+        list: value
+      }
+    })
+  }
+
   @Builder
   NavigationMenus() {
     Row() {
@@ -93,7 +112,7 @@ struct PhotoIndexPage {
   build() {
     Navigation() {
       Stack({ alignContent: Alignment.Bottom }) {
-        if (this.list.length) {
+        if (this.groupList.length) {
           Column({ space: 10 }) {
             if (this.isShowDelete) {
               Row() {

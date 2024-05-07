@@ -64,6 +64,25 @@ class PhotoManager {
       }
     })
   }
+
+  //删除图片
+  async deletePhotos(uris: string[]) {
+    // 准备工作 1.
+    const phAccessHelper = photoAccessHelper.getPhotoAccessHelper(getContext())
+    // 准备工作 2.
+    const predicates = new dataSharePredicates.DataSharePredicates()
+    // 准备工作 3.
+    const fetchResult = await phAccessHelper.getAssets({
+      fetchColumns: [],
+      predicates
+    })
+    // 获取所有图片资源
+    const photoAssets = await fetchResult.getAllObjects()
+    // 通过 filter 基于 uris 过滤出需要删除的资源
+    const deleteAssets = photoAssets.filter(v => uris.includes(v.uri))
+    // 执行删除请求
+    photoAccessHelper.MediaAssetChangeRequest.deleteAssets(getContext(), deleteAssets)
+  }
 }
 
 // 导出媒体相册管理器
