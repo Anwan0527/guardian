@@ -1,14 +1,7 @@
-import { ValuesBucket } from '@kit.ArkData'
-import { NavigationTitleBuilder } from '../../../common/builders'
 
-// 图片和视频文件关键信息。(PhotoKeys)
-export interface PrivacyPhotoDBInfo extends ValuesBucket {
-  id: number | null // 新增时 id 为 null ，自动生成自增 id
-  mediaUri: string // 文件uri
-  privacyUri: string // 沙箱文件uri
-  media_type: number // 媒体文件类型
-  date_added: number // 添加日期
-}
+import { NavigationTitleBuilder } from '../../../common/builders'
+import { PrivacyPhotoDBInfo } from '../../../common/database'
+
 
 interface RouterParams {
   previewUri?: string

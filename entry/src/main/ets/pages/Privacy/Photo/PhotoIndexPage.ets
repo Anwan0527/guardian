@@ -1,15 +1,11 @@
-import { ValuesBucket } from '@kit.ArkData'
+
 import { router } from '@kit.ArkUI'
 import { EmptyTipsComp } from '../../../common/components'
+import { photoManager } from '../../../manager'
+import { fileIo } from '@kit.CoreFileKit'
+import { PRIVACY_PHOTO_FOLDER } from '../../../common/constants'
+import { PrivacyPhotoDBInfo } from './PhotoPreviewPage'
 
-// 图片和视频文件关键信息。(PhotoKeys)
-export interface PrivacyPhotoDBInfo extends ValuesBucket {
-  id: number | null // 新增时 id 为 null ，自动生成自增 id
-  mediaUri: string // 文件uri
-  privacyUri: string // 沙箱文件uri
-  media_type: number // 媒体文件类型
-  date_added: number // 添加日期
-}
 
 interface RouterParams {
   deleteUris?: string[]
@@ -32,6 +28,25 @@ struct PhotoIndexPage {
   @State isShowDelete: boolean = false
   private selectedList: PrivacyPhotoDBInfo[] = []
 
+  aboutToAppear() {
+    photoManager.requestPermissions()
+    this.initPhotosFolder()
+  }
+  // 初始化隐私相册目录，如果文件夹不存在先创建文件夹
+  initPhotosFolder() {
+    // 获取应用上下文
+    const context = getContext()
+    // filesDir 应用通用文件路径，应用在本设备内部存储上通用的存放默认长期保存的文件路径；随应用卸载而清理。
+    // 可以用于保存应用的任何私有数据，主要包括用户持久性文件、图片、媒体文件以及日志文件等。此路径下存储这些数据，使得数据保持私有、安全且持久有效。
+    const filesDir = context.filesDir
+    // 获取沙箱 files 目录
+    const list = fileIo.listFileSync(filesDir)
+    // 如果不存在目录
+    if (list.includes(PRIVACY_PHOTO_FOLDER) === false) {
+      // 创建目录
+      fileIo.mkdirSync(filesDir + '/' + PRIVACY_PHOTO_FOLDER)
+    }
+  }
   @Builder
   NavigationMenus() {
     Row() {

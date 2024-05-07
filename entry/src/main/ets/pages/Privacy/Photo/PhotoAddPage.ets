@@ -1,4 +1,8 @@
 import { NavigationTitleBuilder } from '../../../common/builders'
+import { photoManager } from '../../../manager'
+import { fileIo, fileUri } from '@kit.CoreFileKit'
+import { PRIVACY_PHOTO_FOLDER } from '../../../common/constants'
+import { privacyPhotoDB, PrivacyPhotoDBInfo } from '../../../common/database'
 
 // 图片和视频文件关键信息。(PhotoKeys)
 export interface PhotoInfo {
@@ -31,6 +35,47 @@ struct PhotoAddPage {
   @State isEncrypting: boolean = false
   @State isShowUserAlbumPhoto: boolean = false
   @State completeCount: number = 0
+
+  onPageShow() {
+    this.getPhotoes()
+  }
+
+  async getPhotoes() {
+    this.photos = await photoManager.getPhotoes()
+  }
+
+  //添加图片下一步
+  async copyPhotosToPrivacy() {
+    const promiseTasks = this.selectUris.map(async uri => {
+      //打开文件
+      const originFile = fileIo.openSync(uri)
+      const context = getContext()
+      const filePath = context.filesDir + '/' + PRIVACY_PHOTO_FOLDER + '/' + Date.now() + '.jpg'
+      //复制文件
+      fileIo.copyFileSync(originFile.fd, filePath)
+      //根据uri查找完整信息
+      const item = this.photos.find(v => v.uri == uri)
+      if (item) {
+        //数据库要求格式
+        const data: PrivacyPhotoDBInfo = {
+          id: null,
+          mediaUri: uri,
+          privacyUri: fileUri.getUriFromPath(filePath),
+          media_type: item.media_type,
+          date_added: item.date_added
+        }
+        //返回promise数据
+        return Promise.resolve(data)
+      } else {
+        return Promise.reject()
+      }
+    })
+    const list = await Promise.all(promiseTasks)
+    AlertDialog.show({
+      message: JSON.stringify(list)
+    })
+    await privacyPhotoDB.batchInsert(list)
+  }
 
   // 导航右侧自定义菜单
   @Builder
@@ -238,6 +283,7 @@ struct PhotoAddPage {
               .enabled(this.selectUris.length > 0)
               .onClick(() => {
                 // TODO：选中后下一步, 加密照片
+                this.copyPhotosToPrivacy()
               })
           }
           .layoutWeight(1)
