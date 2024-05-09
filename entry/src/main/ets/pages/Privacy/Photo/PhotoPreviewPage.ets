@@ -14,31 +14,25 @@ struct PhotoPreviewPage {
   @State activePhotoUri: string = ''
   @State @Watch('activeIndexChange') activeIndex: number = 0
   // 路由参数
-  private routerParams: RouterParams = {}
+  @State routerParams: RouterParams = {}
   private swiperController: SwiperController = new SwiperController()
   private scrollerController: Scroller = new Scroller()
 
-  aboutToAppear(): void {
+  async aboutToAppear() {
     const params = router.getParams() as RouterParams
     if (params) {
       this.routerParams = params
-      this.getList()
+      await this.getList()
+
     }
   }
 
   async getList() {
     this.list = await privacyPhotoDB.query()
+    this.activeIndex = this.list.findIndex(v => v.privacyUri === this.routerParams.previewUri)
     // AlertDialog.show({
-    //   message: JSON.stringify({ a: this.list, b: this.routerParams.previewUri }, null, 2)
+    //   message: JSON.stringify(this.activeIndex)
     // })
-    try {
-      this.activeIndex = this.list.findIndex(v => v.privacyUri === this.routerParams.previewUri) //todo 比不出来
-    } catch (e) {
-      AlertDialog.show({
-        message: JSON.stringify(e)
-      })
-    }
-
   }
 
   //监听下标变化，设置滚动条

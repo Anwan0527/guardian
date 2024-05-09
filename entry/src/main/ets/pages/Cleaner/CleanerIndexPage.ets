@@ -3,8 +3,9 @@ import { router } from '@kit.ArkUI'
 import { statfs } from '@kit.CoreFileKit'
 import { photoAccessHelper } from '@kit.MediaLibraryKit'
 import { NavigationTitleBuilder } from '../../common/builders'
-import { formatByteLength } from '../../common/utils'
+import { formatByteLength, GIGA_BYTE } from '../../common/utils'
 import { themeManager } from '../../manager'
+import { cleanerManager } from '../../manager/CleanerManger'
 
 interface ClearItem {
   icon: ResourceStr
@@ -78,6 +79,36 @@ struct CleanerScanResultPage {
 
   onPageShow() {
     themeManager.settingStatusBarWhite()
+    this.getStatfsSize()
+    this.getData()
+  }
+
+  aboutToAppear() {
+    cleanerManager.requestPermissions()
+  }
+
+  async getData() {
+    const screenshotList = await cleanerManager.getScreenshotList()
+    const videoList = await cleanerManager.getVideoList()
+    let screenshotSize = 0
+    screenshotList.forEach(item => {
+      const size = item.get(photoAccessHelper.PhotoKeys.SIZE) as number
+      screenshotSize += size
+    })
+    //更新截图列表信息
+    this.list[0] = {
+      icon: $r('app.media.ic_clean_pmjt'),
+      name: '屏幕截图',
+      list: screenshotList,
+      size: screenshotSize
+    }
+    //更新视频列表信息
+    this.list[1] = {
+      icon: $r('app.media.ic_clean_pmlz'),
+      name: '视频文件',
+      list: videoList,
+      size: 0
+    }
   }
 
   onPageHide() {
@@ -98,7 +129,7 @@ struct CleanerScanResultPage {
       Stack({ alignContent: Alignment.Bottom }) {
         Column() {
           Row({ space: 5 }) {
-            Text(formatByteLength(this.freeSize, 0))
+            Text((this.freeSize / GIGA_BYTE).toFixed(1))
               .fontSize(50)
               .fontColor($r('app.color.white'))
             Column() {
