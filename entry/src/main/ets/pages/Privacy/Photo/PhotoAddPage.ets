@@ -16,7 +16,7 @@ interface tabItem {
 @Entry
 @Component
 struct PhotoAddPage {
-  @State currentIndex: number = 0
+  @State @Watch('currentIndexChange') currentIndex: number = 0
   @State selectUris: string[] = []
   @State tabList: tabItem[] = [{ id: 0, title: '默认相册' }, { id: 1, title: '其他相册' },]
   @State photos: PhotoInfo[] = [] // 图片数组
@@ -26,9 +26,20 @@ struct PhotoAddPage {
   @State isShowUserAlbumPhoto: boolean = false
   @State completeCount: number = 0
 
+  onBackPress(): boolean | void {
+    if (this.isShowUserAlbumPhoto && this.currentIndex == 1) {
+      this.isShowUserAlbumPhoto = false
+      return true
+    }
+  }
+
   onPageShow() {
     this.getPhotoes()
     this.getAlbums()
+  }
+
+  currentIndexChange() {
+    this.selectUris = []
   }
 
   async getAlbums() {
@@ -182,8 +193,10 @@ struct PhotoAddPage {
                           .objectFit(ImageFit.Cover)
                           .autoResize(true)
                           .interpolation(ImageInterpolation.Medium)
-                        Checkbox({ name: item.uri, group: 'group1' })
-                          .margin({ left: 4, top: 4 })
+                        if (this.currentIndex == 0) {
+                          Checkbox({ name: item.uri, group: 'group1' })
+                            .margin({ left: 4, top: 4 })
+                        }
                       }
                       .width('100%')
                       .aspectRatio(1)
@@ -250,9 +263,12 @@ struct PhotoAddPage {
                             .width('100%')
                             .height('100%')
                             .objectFit(ImageFit.Cover)
-                          Checkbox({ name: item.uri, group: 'group2' })
-                            .shape(CheckBoxShape.CIRCLE)
-                            .margin({ left: 4, top: 4 })
+
+                          if (this.isShowUserAlbumPhoto && this.currentIndex == 1) {
+                            Checkbox({ name: item.uri, group: 'group2' })
+                              .shape(CheckBoxShape.CIRCLE)
+                              .margin({ left: 4, top: 4 })
+                          }
                         }
                         .width('100%')
                         .aspectRatio(1)

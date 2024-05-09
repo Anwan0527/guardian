@@ -35,6 +35,17 @@ struct PhotoIndexPage {
     this.initPhotosFolder()
   }
 
+  //预览图片
+  async previewPhoto(uri: string) {
+    if (this.isEditing == true) {
+      return
+    }
+    router.pushUrl({
+      url: '/pages/Privacy/Photo/PhotoPreviewPage'.slice(1),
+      params: { previewUri: uri }
+    })
+  }
+
   //删除隐私图片
   async deletePhotos() {
     //1.删除数据库文件
@@ -50,7 +61,7 @@ struct PhotoIndexPage {
     this.isEditing = false
   }
 
-  //基于选中的urij计算出选中的图片列表
+  //基于选中的uri计算出选中的图片列表
   selectedChange() {
     // this.selectedList = this.list.filter(item => this.selectedName.includes(item.privacyUri))
     this.selectedList =
@@ -96,7 +107,6 @@ struct PhotoIndexPage {
 
   onPageShow(): void {
     this.getList()
-    
   }
 
   async getList() {
@@ -199,6 +209,7 @@ struct PhotoIndexPage {
                               .sharedTransition(item.privacyUri, { duration: 400, curve: Curve.Linear })
                               .onClick(() => {
                                 // TODO：预览图片
+                                this.previewPhoto(item.mediaUri)
                               })
                             Checkbox({ name: item.privacyUri })
                               .selectedColor($r('app.color.brand'))

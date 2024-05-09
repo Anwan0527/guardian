@@ -1,6 +1,6 @@
-
 import { NavigationTitleBuilder } from '../../../common/builders'
-import { PrivacyPhotoDBInfo } from '../../../common/database'
+import { privacyPhotoDB, PrivacyPhotoDBInfo } from '../../../common/database'
+import { router } from '@kit.ArkUI'
 
 
 interface RouterParams {
@@ -12,11 +12,39 @@ interface RouterParams {
 struct PhotoPreviewPage {
   @State list: PrivacyPhotoDBInfo[] = []
   @State activePhotoUri: string = ''
-  @State activeIndex: number = 0
+  @State @Watch('activeIndexChange') activeIndex: number = 0
   // 路由参数
-  @State routerParams: RouterParams = {}
+  private routerParams: RouterParams = {}
   private swiperController: SwiperController = new SwiperController()
   private scrollerController: Scroller = new Scroller()
+
+  aboutToAppear(): void {
+    const params = router.getParams() as RouterParams
+    if (params) {
+      this.routerParams = params
+      this.getList()
+    }
+  }
+
+  async getList() {
+    this.list = await privacyPhotoDB.query()
+    // AlertDialog.show({
+    //   message: JSON.stringify({ a: this.list, b: this.routerParams.previewUri }, null, 2)
+    // })
+    try {
+      this.activeIndex = this.list.findIndex(v => v.privacyUri === this.routerParams.previewUri) //todo 比不出来
+    } catch (e) {
+      AlertDialog.show({
+        message: JSON.stringify(e)
+      })
+    }
+
+  }
+
+  //监听下标变化，设置滚动条
+  activeIndexChange() {
+    this.scrollerController.scrollTo({ xOffset: this.activeIndex * 62, yOffset: 0, animation: true })
+  }
 
   build() {
     Navigation() {
@@ -52,7 +80,10 @@ struct PhotoPreviewPage {
                   .objectFit(ImageFit.Cover)
                   .autoResize(true)
                   .interpolation(ImageInterpolation.Medium)
-                  .outline({ width: 1, color: this.activeIndex === index ? $r('app.color.brand') : Color.Transparent })
+                  .outline({
+                    width: 2,
+                    color: this.activeIndex === index ? $r('app.color.brand') : Color.Transparent
+                  })//选中图片的框
                   .onClick(() => {
                     this.activeIndex = index
                   })
