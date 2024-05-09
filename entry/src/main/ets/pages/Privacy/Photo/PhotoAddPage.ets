@@ -1,5 +1,5 @@
 import { NavigationTitleBuilder } from '../../../common/builders'
-import { photoManager } from '../../../manager'
+import { AlbumInfo, PhotoInfo, photoManager } from '../../../manager'
 import { fileIo, fileUri } from '@kit.CoreFileKit'
 import { PRIVACY_PHOTO_FOLDER } from '../../../common/constants'
 import { privacyPhotoDB, PrivacyPhotoDBInfo } from '../../../common/database'
@@ -7,19 +7,6 @@ import { router } from '@kit.ArkUI'
 import { camera, cameraPicker } from '@kit.CameraKit'
 import { photoAccessHelper } from '@kit.MediaLibraryKit'
 
-// 图片和视频文件关键信息。(PhotoKeys)
-export interface PhotoInfo {
-  uri: string
-  media_type: number
-  date_added: number
-}
-
-// 用户相册
-export interface UserAlbum {
-  imageCount?: number
-  albumName: string
-  coverUri: string
-}
 
 interface tabItem {
   id: number
@@ -33,7 +20,7 @@ struct PhotoAddPage {
   @State selectUris: string[] = []
   @State tabList: tabItem[] = [{ id: 0, title: '默认相册' }, { id: 1, title: '其他相册' },]
   @State photos: PhotoInfo[] = [] // 图片数组
-  @State albums: UserAlbum[] = [] // 相册数组
+  @State albums: AlbumInfo[] = [] // 相册数组
   @State albumPhotos: PhotoInfo[] = [] // 相册图片数组
   @State isEncrypting: boolean = false
   @State isShowUserAlbumPhoto: boolean = false
@@ -41,6 +28,11 @@ struct PhotoAddPage {
 
   onPageShow() {
     this.getPhotoes()
+    this.getAlbums()
+  }
+
+  async getAlbums() {
+    this.albums = await photoManager.getAlbums()
   }
 
   async getPhotoes() {
@@ -115,6 +107,12 @@ struct PhotoAddPage {
   //删除图片
   async deletePhotos() {
     photoManager.deletePhotos(this.selectUris)
+  }
+
+  //根据相册名称获取图片
+  async getAlbumPhotos(name: string) {
+    const list = await photoManager.getAlbumPhotos(name)
+    AlertDialog.show({ message: JSON.stringify(list, null, 2) })
   }
 
   // 导航右侧自定义菜单
@@ -208,7 +206,7 @@ struct PhotoAddPage {
             Stack() {
               // 相册列表
               List() {
-                ForEach(this.albums, (item: UserAlbum) => {
+                ForEach(this.albums, (item: AlbumInfo) => {
                   ListItem() {
                     Row({ space: 10 }) {
                       Image(item.coverUri)
@@ -232,7 +230,8 @@ struct PhotoAddPage {
                     }
                     .padding(10)
                     .onClick(() => {
-                      //
+                      //根据相册->获取图片
+                      this.getAlbumPhotos(item.albumName)
                     })
                   }
                 })

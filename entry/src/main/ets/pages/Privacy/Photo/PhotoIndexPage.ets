@@ -1,4 +1,4 @@
-import { router } from '@kit.ArkUI'
+import { promptAction, router } from '@kit.ArkUI'
 import { EmptyTipsComp } from '../../../common/components'
 import { photoManager } from '../../../manager'
 import { fileIo } from '@kit.CoreFileKit'
@@ -6,6 +6,7 @@ import { PRIVACY_PHOTO_FOLDER } from '../../../common/constants'
 import { privacyPhotoDB, PrivacyPhotoDBInfo } from '../../../common/database'
 import _ from '@wolfx/lodash'
 import dayjs from 'dayjs'
+import { photoAccessHelper } from '@kit.MediaLibraryKit'
 
 
 interface RouterParams {
@@ -23,7 +24,7 @@ struct PhotoIndexPage {
   @State isEditing: boolean = false
   @State list: PrivacyPhotoDBInfo[] = []
   @State groupList: GroupItem[] = []
-  @State selectedName: string[] = []
+  @State @Watch('selectedChange') selectedUris: string[] = []
   // 路由参数
   @State routerParams: RouterParams = {}
   @State isShowDelete: boolean = false
@@ -32,6 +33,49 @@ struct PhotoIndexPage {
   aboutToAppear() {
     photoManager.requestPermissions()
     this.initPhotosFolder()
+  }
+
+  //删除隐私图片
+  async deletePhotos() {
+    //1.删除数据库文件
+    const ids = this.selectedList.map(v => v.id as number)
+    await privacyPhotoDB.batchDelete(ids)
+    this.getList()
+    //2.删除沙箱文件
+    this.selectedList.forEach(item => {
+      const file = fileIo.openSync(item.privacyUri)
+      fileIo.unlink(file.path)
+    })
+    //3.更新
+    this.isEditing = false
+  }
+
+  //基于选中的urij计算出选中的图片列表
+  selectedChange() {
+    // this.selectedList = this.list.filter(item => this.selectedName.includes(item.privacyUri))
+    this.selectedList =
+      this.groupList.flatMap(item => item.list).filter(item => this.selectedUris.includes(item.privacyUri))
+    // this.groupList.map(item => item.list).flat(1).filter(item => this.selectedUris.includes(item.privacyUri))
+  }
+
+  //保存图片到隐私空间
+  async copyPhotos() {
+    try {
+      const promiseTask = this.selectedUris.map(async (uri) => {
+        // 添加隐私图片到相册
+        return await photoManager.addPhoto(uri)
+      })
+      // 等待所有图片都添加完成
+      await Promise.all(promiseTask)
+      // 提示用户
+      promptAction.showToast({ message: '导出成功' })
+      // 恢复界面中的编辑状态
+      this.isEditing = false
+    } catch (e) {
+      promptAction.showToast({
+        message: JSON.stringify(e.message)
+      })
+    }
   }
 
   // 初始化隐私相册目录，如果文件夹不存在先创建文件夹
@@ -52,10 +96,12 @@ struct PhotoIndexPage {
 
   onPageShow(): void {
     this.getList()
+    
   }
 
   async getList() {
     const list = await privacyPhotoDB.query()
+    this.list = list
     const groupData = _.groupBy(list, item => dayjs(item.date_added)
       .format('YYYY-MM-DD'))
     this.groupList = _.map(groupData, (value, key): GroupItem => {
@@ -125,6 +171,7 @@ struct PhotoIndexPage {
                   .decoration({ type: TextDecorationType.Underline, color: $r('app.color.brand') })
                   .onClick(() => {
                     // TODO：点击删除
+
                   })
               }
               .width('100%')
@@ -197,7 +244,7 @@ struct PhotoIndexPage {
               CheckboxGroup()
                 .selectedColor($r('app.color.brand'))
                 .onChange((value) => {
-                  this.selectedName = value.name
+                  this.selectedUris = value.name
                 })
               Text('全选')
                 .fontSize(14)
@@ -209,9 +256,10 @@ struct PhotoIndexPage {
               .borderRadius(10)
               .backgroundColor($r('app.color.brand'))
               .layoutWeight(1)
-              .enabled(this.selectedName.length > 0)
+              .enabled(this.selectedUris.length > 0)
               .onClick(() => {
                 // TODO：复制到相册
+                this.copyPhotos()
               })
 
             Button('删除')
@@ -219,9 +267,10 @@ struct PhotoIndexPage {
               .borderRadius(10)
               .backgroundColor($r('app.color.danger'))
               .layoutWeight(1)
-              .enabled(this.selectedName.length > 0)
+              .enabled(this.selectedUris.length > 0)
               .onClick(() => {
                 // TODO：删除
+                this.deletePhotos()
               })
           }
           .width('100%')

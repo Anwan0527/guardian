@@ -1,4 +1,5 @@
 import { router } from '@kit.ArkUI'
+import { privacyPhotoDB } from '../../common/database'
 import { showDevelopingTips } from '../../common/dev'
 
 interface Item {
@@ -39,6 +40,19 @@ struct PrivacyIndexPage {
   onBackPress() {
     router.back({ url: 'pages/Index' })
     return true
+  }
+
+  onPageShow() {
+    this.getAlbumInfo()
+  }
+
+  async getAlbumInfo() {
+    //获取数量
+    const count = await privacyPhotoDB.queryCount()
+    //封面
+    const coverUri = await privacyPhotoDB.queryCoverUri()
+    //更新视图
+    this.list[0] = { name: '我的相册', image: coverUri, count: count }
   }
 
   // 导航右侧自定义菜单

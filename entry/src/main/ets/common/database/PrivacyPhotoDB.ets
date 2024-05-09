@@ -121,7 +121,7 @@ class PrivacyPhotoDB {
   async queryCoverUri() {
     const store = await this.getStoreInstance()
     const predicates = new relationalStore.RdbPredicates(this.tableName)
-    predicates.orderByDesc('id')
+    predicates.orderByDesc('date_added')
     const resultSet = await store.query(predicates)
     let coverUri = ''
     // 查询第一条数据
