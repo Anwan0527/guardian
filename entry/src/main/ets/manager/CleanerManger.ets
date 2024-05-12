@@ -3,6 +3,8 @@ import { dataSharePredicates } from '@kit.ArkData'
 import { promptAction } from '@kit.ArkUI'
 import { photoAccessHelper } from '@kit.MediaLibraryKit'
 import { permissionManager } from '.'
+import { deviceInfo } from '@kit.BasicServicesKit'
+import { KILO_BYTE, MEGA_BYTE } from '../common/utils'
 
 // 手机瘦身
 class CleanerManager {
@@ -64,9 +66,22 @@ class CleanerManager {
     return photoAssets.filter(v => v.photoType === photoAccessHelper.PhotoType.VIDEO)
   }
 
+  //获取大尺寸图片，用于压缩
+  async getLargeSizeList() {
+    //获取图片资源
+    const photoAssets = await this.getAssets()
+    //大图片的临界点
+    const largeSize = deviceInfo.marketName == 'emulator' ? 500 * KILO_BYTE : 2 * MEGA_BYTE
+    return photoAssets.filter(v => v.get(photoAccessHelper.PhotoKeys.SIZE) as number > largeSize)
+  }
+
   // 删除图片
   async deletePhotos(uriList: string[]) {
-
+    //获取图片资源
+    const photoAssets = await this.getAssets()
+    //过滤
+    const deletAssets = photoAssets.filter(v => uriList.includes(v.uri))
+    await photoAccessHelper.MediaAssetChangeRequest.deleteAssets(getContext(), deletAssets)
   }
 }
 

@@ -85,6 +85,7 @@ struct CleanerScanResultPage {
 
   aboutToAppear() {
     cleanerManager.requestPermissions()
+    this.getData()
   }
 
   async getData() {

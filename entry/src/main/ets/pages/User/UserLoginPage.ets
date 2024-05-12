@@ -1,5 +1,14 @@
+import { AxiosResponse } from '@ohos/axios'
 import { BASE_URL, LOGIN_INFO, LoginInfoResponse } from '../../common/constants'
+import { axiosInstance } from '../../common/utils'
+import { promptAction } from '@kit.ArkUI'
+import { postCodeGraphicCheckAPI, postCodeSmsSendAPI, postUserLoginVerifyCodeAPI } from '../../common/api'
 
+interface postCodeGraphicCheckData {
+  bizType: number
+  phone: string
+  verifyCode: string
+}
 
 @Entry
 @Component
@@ -20,6 +29,30 @@ struct UserLoginPage {
   @State count: number = 0
   // 倒计时定时器
   private intervalID: number = -1
+
+  async onSubmitGraphic() {
+    try {
+      await postCodeGraphicCheckAPI({ bizType: 1, phone: this.phoneNumber, verifyCode: this.graphicCode })
+      promptAction.showToast({
+        message: '短信已发送'
+      })
+      this.isShowSheet = false
+      this.sendSmsCode()
+    } catch {
+      this.timestamp = Date.now()
+    }
+  }
+
+  async sendSmsCode() {
+    const res = await postCodeSmsSendAPI({ phone: this.phoneNumber, bizType: 1 })
+    AlertDialog.show({ message: JSON.stringify(res) })
+  }
+
+  //用户登陆
+  async onSubmitLoginForm() {
+    const res = await postUserLoginVerifyCodeAPI({ phone: this.phoneNumber, verifyCode: this.verifyCode })
+    AlertDialog.show({ message: JSON.stringify(res) })
+  }
 
   // 半模态转场
   @Builder
@@ -42,6 +75,7 @@ struct UserLoginPage {
             })
             .onSubmit(() => {
               // TODO:提交图形验证码
+              this.onSubmitGraphic()
             })
           Image(`${BASE_URL}/code/graphic?phone=${this.phoneNumber}&bizType=${1}&timestamp=${this.timestamp}`)
             .width(108)
@@ -59,6 +93,7 @@ struct UserLoginPage {
           .enabled(this.graphicCode.length > 0)
           .onClick(() => {
             // TODO:提交图形验证码
+            this.onSubmitGraphic()
           })
       }
     }
@@ -128,13 +163,14 @@ struct UserLoginPage {
             .enabled(this.phoneNumber.length > 0 && this.verifyCode.length > 0)
             .onClick(() => {
               // TODO:登录表单提交
+              this.onSubmitLoginForm()
             })
 
-          Text('仅用于IT培训教学使用，为保障您的个人信息安全请勿向平台录入任何个人敏感信息（如手机号、身份证号等）！')
-            .fontSize(14)
-            .width('100%')
-            .fontColor($r('app.color.danger'))
-            .margin({ top: 50 })
+          // Text('仅用于IT培训教学使用，为保障您的个人信息安全请勿向平台录入任何个人敏感信息（如手机号、身份证号等）！')
+          //   .fontSize(14)
+          //   .width('100%')
+          //   .fontColor($r('app.color.danger'))
+          //   .margin({ top: 50 })
         }
       }
       .padding({ left: 30, right: 30, top: 30 })

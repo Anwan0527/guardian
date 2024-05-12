@@ -2,6 +2,9 @@ import { router } from '@kit.ArkUI'
 import { calendarManager } from '@kit.CalendarKit'
 import { NavigationTitleBuilder } from '../../common/builders'
 import { themeManager } from '../../manager'
+import { userCalendarManager } from '../../manager/UserCalendarManager'
+import { data } from '@kit.TelephonyKit'
+import { ONE_HOUR, ONE_MINUTE, ONE_SECOND } from '../../common/constants/TimeStamp'
 
 @Entry
 @Component
@@ -17,6 +20,43 @@ struct CalendarIndexPage {
 
   onPageHide() {
     themeManager.settingStatusBarBlack()
+  }
+
+  async aboutToAppear() {
+    await userCalendarManager.requestPermission()
+  }
+
+  //添加日程
+  async addEvent() {
+    const id = await userCalendarManager.addEvent({
+      type: calendarManager.EventType.NORMAL,
+      startTime: Date.now(),
+      endTime: Date.now() + ONE_HOUR * 3,
+      title: '守护助手提醒你吃饭了'
+    })
+    AlertDialog.show({
+      message: '日程id' + id
+    })
+  }
+
+  //添加重要日程
+  async addInportantEvent() {
+    // 添加重要日程，模拟器不能提醒
+    const id = await userCalendarManager.addEvent({
+      type: calendarManager.EventType.IMPORTANT,
+      startTime: Date.now() + ONE_MINUTE * 1,
+      endTime: Date.now() + ONE_MINUTE * 2,
+      title: '守护助手提醒这是重要提醒',
+      reminderTime: [0, 5, 10] // 单位是分钟，0 表示准点提醒
+    })
+    AlertDialog.show({ message: '重要日程添加成功，等待提醒,日程id为：' + id })
+
+  }
+
+  //获取日程
+  async getEvent() {
+    const list = await userCalendarManager.getEvent()
+    AlertDialog.show({ message: JSON.stringify(list, null, 2) })
   }
 
   @Builder
@@ -123,6 +163,17 @@ struct CalendarIndexPage {
               Button('添加诈骗日程')
                 .onClick(async () => {
                   //
+                  this.addEvent()
+                })
+              Button('获取诈骗日程')
+                .onClick(async () => {
+                  //
+                  this.getEvent()
+                })
+              Button('添加重要日程')
+                .onClick(async () => {
+                  //
+                  this.addInportantEvent()
                 })
               Button('添加过期日程')
                 .onClick(async () => {

@@ -1,264 +1,197 @@
-import { ValuesBucket } from '@kit.ArkData'
-import dayjs from 'dayjs'
-import { EmptyTipsComp } from '../../../common/components'
-import { CustomInputDialog } from '../../../common/dialog'
+import { photoAccessHelper } from '@kit.MediaLibraryKit'
+import { NavigationTitleBuilder } from '../../../common/builders'
+import { formatByteLength } from '../../../common/utils'
+import { themeManager } from '../../../manager'
+import { cleanerManager } from '../../../manager/CleanerManger'
+import { image } from '@kit.ImageKit'
+import { fileIo } from '@kit.CoreFileKit'
 
-export interface PrivacyRecorderDBInfo extends ValuesBucket {
-  id: number | null // 新增时 id 为 null ，自动生成自增 id
-  filePath: string
-  title: string
-  date_added: number
-  duration: number
-}
 
 @Entry
 @Component
-struct RecorderIndexPage {
-  @State list: PrivacyRecorderDBInfo[] = []
-  @State tempInputText: string = ''
-  @State onConfirmEnable: boolean = true
-  @State activeItem: PrivacyRecorderDBInfo | null = null
-  @State isRecording: boolean = false
-  @State isPlaying: boolean = false
-  @State recordingTime: number = 0
-  @State playingTime: number = 0
-  // 自定义弹窗层
-  dialogController: CustomDialogController = new CustomDialogController({
-    builder: CustomInputDialog({
-      title: '重命名音频',
-      message: '支持下划线、数宇、英文字母与中文',
-      inputText: this.tempInputText,
-      onConfirm: async () => {
-        // TODO：重命名录音
-      },
-    }),
-    autoCancel: true,
-    customStyle: true,
-    alignment: DialogAlignment.Center,
-  })
-  private playingTimerId: number = -1
-  private recordingTimerId: number = -1
+struct CompressPhotoIndexPage {
+  @State list: photoAccessHelper.PhotoAsset[] = []
+  @State selectedName: string[] = []
+  @State selectedSize: number = 0
 
-  @Builder
-  NavigationMenus() {
-    Row() {
-      Text('编辑')
-        .fontSize(16)
-        .fontColor($r('app.color.font'))
-        .onClick(() => {
-
-        })
-    }
-    .height('100%')
-    .padding({ right: 25 })
+  onPageShow() {
+    themeManager.settingStatusBarWhite()
   }
 
-  @Builder
-  ListItemSwipeActionEnd() {
-    Row() {
-      Button("重命名")
-        .type(ButtonType.Normal)
-        .height('100%')
-        .aspectRatio(1)
-        .backgroundColor('#CECFCF')
-        .onClick(() => {
-          // TODO：录音重命名
-        })
-      Button("删除")
-        .type(ButtonType.Normal)
-        .height('100%')
-        .aspectRatio(1)
-        .backgroundColor('#FF5E5D')
-        .onClick(() => {
-          // TODO：删除录音
-        })
+  onPageHide() {
+    themeManager.settingStatusBarBlack()
+  }
+
+  aboutToAppear() {
+    this.getList()
+  }
+
+  // 获取列表数据
+  async getList() {
+    this.list = await cleanerManager.getLargeSizeList()
+  }
+
+  async startCompress() {
+    const promisTasks = this.selectedName.map(async (uri) => {
+      return await this.compressPhoto(uri)
+    })
+    await Promise.all(promisTasks)
+    // 弹窗提醒用户是否删除本地图片
+    AlertDialog.show({
+      message: `成功压缩${this.selectedName.length}张图片，是否删除原图`,
+      alignment: DialogAlignment.Center,
+      buttons: [
+        {
+          value: '取消', fontColor: $r('app.color.font_sub'), action: () => {
+        }
+        },
+        {
+          value: '确认', action: () => {
+          cleanerManager.deletePhotos(this.selectedName)
+        }
+        },
+      ]
+    })
+  }
+
+  // TODO：立即瘦身（压缩照片）
+  async compressPhoto(uri: string) {
+    try { //获取图片
+      const file = fileIo.openSync(uri)
+      const imageSource = image.createImageSource(file.fd)
+      //创建Packer
+      const imagePacker = image.createImagePacker()
+      const arrayBuffer = await imagePacker.packing(imageSource, { format: 'image/jpeg', quality: 20 })
+      //生成新图片
+      const phAccessHelper = photoAccessHelper.getPhotoAccessHelper(getContext())
+      const newFileUri = await phAccessHelper.createAsset(photoAccessHelper.PhotoType.IMAGE, 'jpg')
+      const newFile = fileIo.openSync(newFileUri, fileIo.OpenMode.READ_WRITE)
+      fileIo.write(newFile.fd, arrayBuffer)
+      // AlertDialog.show({
+      //   message: 'ok'
+      // })
+      fileIo.close(newFile.fd)
+      fileIo.close(file.fd)
+    } catch (e) {
+      AlertDialog.show({
+        message: JSON.stringify(e.message)
+      })
     }
-    .height('100%')
-    .justifyContent(FlexAlign.SpaceEvenly)
   }
 
   build() {
     Navigation() {
       Stack({ alignContent: Alignment.Bottom }) {
-        Column() {
-          if (this.list.length) {
-            List() {
-              ListItemGroup() {
-                ForEach(this.list, (item: PrivacyRecorderDBInfo) => {
-                  ListItem() {
-                    Row({ space: 20 }) {
-                      Column({ space: 10 }) {
-                        Text(item.title)
-                          .fontSize(16)
-                          .fontColor($r('app.color.font2'))
-                        // 录音进度条
-                        if (this.activeItem?.id === item.id && this.isPlaying) {
-                          Row({ space: 5 }) {
-                            Text(dayjs(this.playingTime)
-                              .format('mm:ss'))
-                              .fontSize(12)
-                              .fontColor($r('app.color.font_sub'))
-                            Progress({
-                              value: this.playingTime,
-                              total: item.duration,
-                            })
-                          }
-                          .padding({ right: 20 })
-                        } else {
-                          Text(dayjs(item.date_added)
-                            .format('YYYY年MM月DD日 HH:mm:ss'))
-                            .fontSize(12)
-                            .fontColor($r('app.color.font_sub'))
-                        }
-                      }
-                      .alignItems(HorizontalAlign.Start)
-                      .layoutWeight(1)
+        Scroll() {
+          Column() {
+            Column() {
+              Column({ space: 10 }) {
+                Text() {
+                  Span('预计节省')
+                  Span(formatByteLength(this.selectedSize))
+                }
+                .fontSize(16)
+                .fontColor($r('app.color.white'))
 
-                      Column() {
-                        Image(
-                          this.activeItem?.id === item.id && this.isPlaying ?
-                          $r('sys.media.ohos_ic_public_pause') :
-                          $r("app.media.ic_public_play")
-                        )
-                          .width(22)
-                          .aspectRatio(1)
-                          .fillColor('#A6B6C4')
-                        Text(item.duration + 'mm:ss')
-                          .fontSize(12)
-                          .fontColor('#A6B6C4')
-                          .lineHeight(25)
-                      }
-                      .justifyContent(FlexAlign.Center)
-                      .height('100%')
-                      .onClick(() => {
-                        // TODO：播放音频
-                      })
-                    }
-                    .width('100%')
-                    .justifyContent(FlexAlign.SpaceBetween)
-                    .padding({ left: 15, right: 15 })
-                  }
-                  .height(72)
-                  .transition({ type: TransitionType.Delete, opacity: 0 })
-                  .swipeAction({
-                    end: {
-                      builder: this.ListItemSwipeActionEnd(),
-                      onStateChange: (state) => {
-                        if (state === SwipeActionState.EXPANDED) {
-                          // 保存当前滑动的数据
-                          this.activeItem = item
-                        }
-                      }
-                    },
-                    edgeEffect: SwipeEdgeEffect.None,
-                  })
-                })
+                Text(this.selectedName.length + '张可瘦身照片')
+                  .fontSize(12)
+                  .fontColor($r('app.color.white'))
               }
-              .padding({ bottom: 126 })
-              .divider({
-                strokeWidth: 1,
-                color: $r('app.color.border'),
-                startMargin: 15,
-                endMargin: 15
-              })
             }
-            // 每行之间的分界线
+            .height(80)
+            .justifyContent(FlexAlign.Center)
+
+            Column() {
+              Column({ space: 20 }) {
+                Text('瘦身后的照片会被放到系统相册最前，以便查看')
+                  .fontSize(14)
+                  .fontColor($r('app.color.font_sub'))
+                  .width('100%')
+                  .padding({ left: 20, right: 20 })
+                List() {
+                  ListItem() {
+                    GridRow({ gutter: 8, columns: 4 }) {
+                      ForEach(this.list, (item: photoAccessHelper.PhotoAsset) => {
+                        GridCol() {
+                          Stack({ alignContent: Alignment.TopStart }) {
+                            // TODO: 共享元素转场
+                            Image(item.uri)
+                              .width('100%')
+                              .height('100%')
+                              .objectFit(ImageFit.Cover)
+                              .autoResize(true)
+                              .interpolation(ImageInterpolation.Medium)
+                              .onClick(() => {
+                                // 打开对比
+                              })
+                            Checkbox({ name: item.uri })
+                              .selectedColor($r('app.color.brand'))
+                          }
+                          .width('100%')
+                          .aspectRatio(1)
+                          .borderRadius(6)
+                          .clip(true)
+                        }
+                      }, (item: photoAccessHelper.PhotoAsset) => item.uri)
+                    }
+                  }
+
+                  ListItem()
+                    .height(120)
+                }
+                .width('100%')
+                .height('100%')
+                .sticky(StickyStyle.Header) // 固定分组标题
+                .padding({ left: 20, right: 20 })
+              }
+              .padding({ top: 20, bottom: 20 })
+            }
+            .backgroundColor($r('app.color.white'))
+            .layoutWeight(1)
             .width('100%')
-            .height('100%')
-          } else {
-            EmptyTipsComp({ title: '您还没有任何隐私录音\n点击下面的按钮开始创建' })
           }
         }
+        .width('100%')
         .height('100%')
 
-        // 录音按钮
-        Column() {
-          Image($r('app.media.ic_circle_recorder'))
-            .width(56)
-            .aspectRatio(1)
+        // 底部操作按钮
+        Row({ space: 15 }) {
+          Column() {
+            CheckboxGroup()
+              .selectedColor($r('app.color.brand'))
+              .onChange((value) => {
+                this.selectedName = value.name
+              })
+            Text('全选')
+              .fontSize(14)
+              .fontColor($r('app.color.font2'))
+          }
+
+          Button(`立即瘦身(${this.selectedName.length}张）`)
+            .type(ButtonType.Normal)
+            .borderRadius(10)
+            .backgroundColor($r('app.color.brand'))
+            .layoutWeight(1)
+            .enabled(this.selectedName.length > 0)
             .onClick(() => {
-              // TODO：开始录音
+              // TODO：立即瘦身（压缩照片）
+              this.startCompress()
             })
         }
         .width('100%')
-        .height(126)
-        .justifyContent(FlexAlign.Center)
-        .padding({ left: 15, right: 15 })
-
-        // 停止录音
-        Column({ space: 15 }) {
-          Row({ space: 12 }) {
-            Row() {
-              ForEach(Array.from({ length: 12 }), () => {
-                Column()
-                  .width(5)
-                  .height(16)
-                  .backgroundColor('#80ffffff')
-                  .borderRadius(5 / 2)
-              })
-            }
-            .width(110)
-            .justifyContent(FlexAlign.SpaceBetween)
-
-            // 图标
-            Image($r('app.media.ic_recorder_fill'))
-              .height('100%')
-
-            Row() {
-              ForEach(Array.from({ length: 12 }), () => {
-                Column()
-                  .width(5)
-                  .height(16)
-                  .backgroundColor('#80ffffff')
-                  .borderRadius(5 / 2)
-              })
-            }
-            .width(110)
-            .justifyContent(FlexAlign.SpaceBetween)
-          }
-          .justifyContent(FlexAlign.Center)
-          .width('100%')
-          .height(58)
-          .margin({ top: 40 })
-
-          Text(
-            dayjs(this.recordingTime)
-              .format(this.recordingTime > 1000 * 60 * 60 ? 'HH:mm:ss' : 'mm:ss')
-          )
-            .fontSize(18)
-            .lineHeight(25)
-            .fontWeight(700)
-            .fontColor($r('app.color.white'))
-
-          Row() {
-            Button('停止录音')
-              .type(ButtonType.Normal)
-              .width('100%')
-              .backgroundColor($r('app.color.brand'))
-              .border({ width: 1, color: $r('app.color.white') })
-              .borderRadius(10)
-              .onClick(() => {
-                // TODO：停止录音
-              })
-          }
-          .padding({ left: 15, right: 15 })
-        }
-        .width('101%')
-        .height(222)
-        .backgroundImage('/common/images/RecorderAddPage_bg_bottom.png')
-        .backgroundImageSize(ImageSize.Cover)
-        .visibility(this.isRecording ? Visibility.Visible : Visibility.None)
+        .height(76)
+        .backgroundColor($r('app.color.white'))
+        .padding({ left: 20, right: 20 })
+        .border({ width: { top: 1 }, color: $r('app.color.border') })
       }
-      .height('100%')
     }
-    .title('录音')
+    .title(NavigationTitleBuilder('照片瘦身'))
+    .hideBackButton(true)
     .titleMode(NavigationTitleMode.Mini)
     .mode(NavigationMode.Stack)
-    .menus(this.NavigationMenus)
     .linearGradient({
-      angle: 180,
-      colors: this.isRecording ? [[$r('app.color.white'), 0.95], [$r('app.color.brand'), 0.95]] :
-        [[$r('app.color.white'), 0], [$r('app.color.white'), 1]]
+      direction: 213,
+      colors: [[$r('app.color.brand'), 0], [$r('app.color.brand_light'), 0.3], [$r('app.color.white'), 0.3]]
     })
   }
 }

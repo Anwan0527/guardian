@@ -47,6 +47,7 @@
     "pages/Test/RDBstoretestPage",
     "pages/Test/AudioCaptureTsetPage",
     "pages/Test/WlangetpassageTextPage",
-    "pages/Test/MediaLibraryKitTestPage"
+    "pages/Test/MediaLibraryKitTestPage",
+    "pages/Test/AxiosTestPage"
   ]
 }

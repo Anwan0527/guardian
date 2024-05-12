@@ -1,4 +1,5 @@
 import { abilityAccessCtrl, bundleManager, common, Permissions } from '@kit.AbilityKit';
+import promptAction from '@ohos.promptAction';
 
 class PermissionManager {
   // 检查是否授权
@@ -19,7 +20,7 @@ class PermissionManager {
   async requestPermissions(permissions: Permissions[]) {
     //程序访问控制管理器
     const atManager = abilityAccessCtrl.createAtManager()
-    // 核心 API：⚠️注意：只会在首次申请权限的时候弹出（异步的，等待用户操作）
+    // 核心 API：️注意：只会在首次申请权限的时候弹出（异步的，等待用户操作）
     const requestResult = await atManager.requestPermissionsFromUser(getContext(), permissions)
     return requestResult.authResults.every(item => item === abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED)
   }
@@ -37,6 +38,29 @@ class PermissionManager {
         pushParams: bundleInfo.name//打开指定应用详情页面
       }
     })
+  }
+
+  // 如果拒绝，提醒去设置页中开启权限
+  async requestPermissionsWithDialog(permissions: Permissions[], message: string) {
+    // 申请权限
+    const isAuth = await this.requestPermissions(permissions)
+    // 如果拒绝权限
+    if (isAuth === false) {
+      // 开启弹窗提示
+      const dialogRes = await promptAction.showDialog({
+        alignment: DialogAlignment.Center,
+        title: '温馨提示',
+        message: message,
+        buttons: [
+          { text: '取消', color: $r('app.color.font_sub') },
+          { text: '立即开启', color: $r('app.color.brand') }
+        ]
+      })
+      // 点击立即开启按钮时，打开设置页
+      if (dialogRes.index === 1) {
+        this.openPermissionSettingsPage()
+      }
+    }
   }
 }
 

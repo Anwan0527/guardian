@@ -2,6 +2,8 @@ import { photoAccessHelper } from '@kit.MediaLibraryKit'
 import { NavigationTitleBuilder } from '../../common/builders'
 import { formatByteLength } from '../../common/utils'
 import { themeManager } from '../../manager'
+import { router } from '@kit.ArkUI'
+import { cleanerManager } from '../../manager/CleanerManger'
 
 interface RouterParams {
   name: string
@@ -12,11 +14,46 @@ interface RouterParams {
 struct CleanerSelectPage {
   @State routerParams: RouterParams | null = null
   @State list: photoAccessHelper.PhotoAsset[] = []
-  @State selectNames: string[] = []
+  @State @Watch('selectNameChange') selectNames: string[] = []
   @State selectedSize: number = 0
 
   onPageShow() {
     themeManager.settingStatusBarWhite()
+  }
+
+  aboutToAppear(): void {
+    // 获取路由参数，参数的 name 最终作为 Navigation 组件的 title 作为标题展示
+    const params = router.getParams() as RouterParams
+    if (params) {
+      this.routerParams = params
+      // 基于页面参数，查询图片列表
+      this.getList()
+    }
+  }
+
+  async getList() {
+    if (this.routerParams?.name === '屏幕截图') {
+      this.list = await cleanerManager.getScreenshotList()
+    }
+  }
+
+  //计算可节省空间
+  selectNameChange() {
+    //基于uri集合过滤
+    const selectedList = this.list.filter(v => this.selectNames.includes(v.uri))
+    //reduce 累加计算
+    this.selectedSize = selectedList.reduce((acc, item) => {
+      return acc + (item.get(photoAccessHelper.PhotoKeys.SIZE) as number)
+    }, 0)
+  }
+
+  //删除图片
+  async deletePhotos() {
+    await cleanerManager.deletePhotos(this.selectNames)
+    this.getList()
+    AlertDialog.show({
+      message: '删除成功'
+    })
   }
 
   onPageHide() {
@@ -101,6 +138,7 @@ struct CleanerSelectPage {
           .backgroundColor($r('app.color.danger'))
           .onClick(() => {
             // TODO：删除选中图片
+            this.deletePhotos()
           })
       }
       .border({ width: { top: 1 }, color: $r('app.color.border') })

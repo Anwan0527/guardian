@@ -1,14 +1,30 @@
-import { AbilityConstant, UIAbility, Want } from '@kit.AbilityKit';
-import { hilog } from '@kit.PerformanceAnalysisKit';
+import { AbilityConstant, errorManager, UIAbility, Want } from '@kit.AbilityKit';
+import { FaultLogger, hilog } from '@kit.PerformanceAnalysisKit';
 import { router, window } from '@kit.ArkUI';
 import { PrivacySettings, PRIVACY_SETTINGS } from '../common/constants';
+import { axiosInstance } from '../common/utils';
+
+let observerId = -1
 
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
+    observerId = errorManager.on('error', {
+      //当应用产生未捕获的异常时
+      async onUnhandledException() {
+        const list = await FaultLogger.query(FaultLogger.FaultType.JS_CRASH)
+        await axiosInstance({
+          method: 'POST',
+          url: '/log/fault/report/single',
+          data: list[0]
+        })
+        hilog.info(0x0000, 'testTag', '%{public}s', JSON.stringify(list, null, 2));
+      }
+    })
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onCreate');
   }
 
   onDestroy(): void {
+    errorManager.off("error", observerId);
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onDestroy');
   }
 
@@ -16,7 +32,7 @@ export default class EntryAbility extends UIAbility {
     // Main window is created, set main page for this ability
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
 
-    windowStage.loadContent('/pages/Cleaner/CleanerIndexPage'.slice(1), (err) => {
+    windowStage.loadContent('/pages/Index'.slice(1), (err) => {
       if (err.code) {
         hilog.error(0x0000, 'testTag', 'Failed to load the content. Cause: %{public}s', JSON.stringify(err) ?? '');
         return;

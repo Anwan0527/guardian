@@ -3,13 +3,14 @@ import dayjs from 'dayjs';
 import { NavigationTitleBuilder } from '../../common/builders';
 import { TitleDividerComp } from '../../common/components/TitleDividerComp';
 import { themeManager } from '../../manager';
+import { userCalendarManager } from '../../manager/UserCalendarManager';
 
 
 @Entry
 @Component
 struct CalendarSearchPage {
   @State list: calendarManager.Event[] = []
-  @State searchText: string = ''
+  @State searchText: string = '守护1'
   @State activeEvent: calendarManager.Event | null = null
   @State isShowSheet: boolean = false
   @State isEditing: boolean = false
@@ -21,6 +22,18 @@ struct CalendarSearchPage {
 
   onPageHide() {
     themeManager.settingStatusBarBlack()
+  }
+
+  //搜索
+  async onSubmit() {
+    try {
+      this.list = await userCalendarManager.searchEvents(this.searchText)
+    
+    } catch (e) {
+      AlertDialog.show({
+        message: JSON.stringify(e.message)
+      })
+    }
   }
 
   @Builder
@@ -91,6 +104,7 @@ struct CalendarSearchPage {
             })
             .onSubmit(() => {
               // TODO：搜索日程
+              this.onSubmit()
             })
         }
         .padding({
