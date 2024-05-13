@@ -1,24 +1,55 @@
-
 /** 备份记录 */
-export interface HistoryItem {
-  createTime: string;
-  id: string;
-  phoneType: string;
-  contactsNum: number;
-}
+import { deletePhoneBookByIdAPI, getPhoneBookHistoryAPI, getPhoneBookHistoryItem } from '../../common/api'
+import { promptAction, router } from '@kit.ArkUI'
+
 
 interface ListGroupItem {
   date: string
-  list: HistoryItem []
+  list: getPhoneBookHistoryItem []
 }
 
 @Entry
 @Component
 struct ContactHistoryPage {
   @State isShowSheet: boolean = false
-  @State list: HistoryItem[] = []
-  @State activeItem: HistoryItem | null = null
+  @State list: getPhoneBookHistoryItem[] = []
+  @State activeItem: getPhoneBookHistoryItem | null = null
   @State groupList: ListGroupItem[] = []
+
+  aboutToAppear() {
+    this.getList()
+  }
+
+  // 根据 id 删除通讯备份
+  deleteBackup(id: string) {
+    // 调用接口，服务器端根据 id 删除掉数据
+    deletePhoneBookByIdAPI(id)
+    // 轻提示
+    promptAction.showToast({ message: '删除成功' })
+    // 「乐观UI更新」：客户端假设请求必然成功，因此不等待接口的返回，先行对视图进行更新。
+    this.list = this.list.filter(v => v.id !== id)
+  }
+
+  async getList(lastId = '') {
+    const res = await getPhoneBookHistoryAPI({ lastId: lastId })
+    // 提取列表数据
+    const list = res.data.result
+    // 追加到数组中，注意分页不能直接用赋值
+    this.list.push(...list)
+    // 如果还有数据，继续递归调用自己
+    if (list.length > 0) {
+      // 获取最后一项的 id 值，用于查询分页的数据
+      const id = list[list.length - 1].id
+      // 再根据 id 查询分页数据
+      this.getList(id)
+    }
+  }
+
+  //打开半模态
+  openSheet(item: getPhoneBookHistoryItem) {
+    this.isShowSheet = true
+    this.activeItem = item
+  }
 
   @Builder
   ListHeaderBuilder(year: string) {
@@ -45,6 +76,7 @@ struct ContactHistoryPage {
         .aspectRatio(1)
         .onClick(() => {
           // TODO: 删除
+          this.deleteBackup(id)
         })
     }
   }
@@ -58,6 +90,7 @@ struct ContactHistoryPage {
           .SheetItem()
           .onClick(() => {
             // TODO: 查看详情
+            router.pushUrl({ url: 'pages/Contact/ContactHistoryDetailPage', params: { id: this.activeItem?.id } })
           })
         Text('恢复（替换本机通讯录）')
           .SheetItem()
@@ -94,7 +127,7 @@ struct ContactHistoryPage {
   build() {
     Navigation() {
       List() {
-        ForEach(this.list, (item: HistoryItem) => {
+        ForEach(this.list, (item: getPhoneBookHistoryItem) => {
           ListItem() {
             Column({ space: 5 }) {
               Row() {
@@ -124,6 +157,7 @@ struct ContactHistoryPage {
             .padding({ left: 20, right: 20 })
             .onClick(() => {
               // 打开面板
+              this.openSheet(item)
             })
           }
           .swipeAction({

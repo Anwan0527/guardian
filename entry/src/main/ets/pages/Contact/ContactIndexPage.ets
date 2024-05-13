@@ -29,6 +29,7 @@ struct ContactIndexPage {
 
   onPageShow() {
     themeManager.settingStatusBarWhite()
+
   }
 
   onPageHide() {
@@ -44,6 +45,8 @@ struct ContactIndexPage {
       AlertDialog.show({ message: JSON.stringify(error, null, 2) })
     }
   }
+
+
 
   @Builder
   NavigationMenus() {

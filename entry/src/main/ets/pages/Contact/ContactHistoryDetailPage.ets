@@ -1,4 +1,7 @@
 import { contact } from '@kit.ContactsKit'
+import { getPhoneBookByIdAPI } from '../../common/api'
+import { promptAction, router } from '@kit.ArkUI'
+import { pasteboardManager } from '../../manager/PasteboardManager'
 
 interface RouterParams {
   id?: string
@@ -11,6 +14,23 @@ struct ContactHistoryDetailPage {
   @State contactsNum: number = 0
   @State createTime: string = ''
   @State routerParams: RouterParams = {}
+
+  aboutToAppear(): void {
+    const params = router.getParams() as RouterParams
+    if (params) {
+      this.routerParams = params
+      this.getDetail()
+    }
+  }
+
+  async getDetail() {
+    if (this.routerParams.id) {
+      const res = await getPhoneBookByIdAPI(this.routerParams.id)
+      this.list = res.data.result.contacts
+      this.contactsNum = res.data.result.contactsNum
+      this.createTime = res.data.result.createTime
+    }
+  }
 
   @Builder
   ListHeaderBuilder(date: string, count: number) {
@@ -56,6 +76,10 @@ struct ContactHistoryDetailPage {
               .justifyContent(FlexAlign.SpaceBetween)
               .onClick(() => {
                 // TODO: 复制手机号
+                if (item.phoneNumbers?.[0].phoneNumber) {
+                  pasteboardManager.setPasteText(item.phoneNumbers?.[0].phoneNumber.toString())
+                  promptAction.showToast({ message: '手机号码已复制' })
+                }
               })
             }
           })

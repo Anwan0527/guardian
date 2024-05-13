@@ -48,7 +48,7 @@ struct UserLoginPage {
   //发送验证码
   async sendSmsCode() {
     const res = await postCodeSmsSendAPI({ phone: this.phoneNumber, bizType: 1 })
-    AlertDialog.show({ message: JSON.stringify(res) })
+    // AlertDialog.show({ message: JSON.stringify(res) })
   }
 
   // 开始倒计时，自己完成即可

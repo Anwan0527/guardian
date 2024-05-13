@@ -1,8 +1,9 @@
 import { AbilityConstant, errorManager, UIAbility, Want } from '@kit.AbilityKit';
 import { FaultLogger, hilog } from '@kit.PerformanceAnalysisKit';
-import { router, window } from '@kit.ArkUI';
+import { promptAction, router, window } from '@kit.ArkUI';
 import { PrivacySettings, PRIVACY_SETTINGS } from '../common/constants';
 import { axiosInstance } from '../common/utils';
+import { pasteboardManager } from '../manager/PasteboardManager';
 
 let observerId = -1
 
@@ -38,6 +39,12 @@ export default class EntryAbility extends UIAbility {
         return;
       }
       hilog.info(0x0000, 'testTag', 'Succeeded in loading the content.');
+      // 读取剪贴板的内容（拼多多，淘宝，读取分享链接）
+      const text = pasteboardManager.getPasteText()
+      // 后续业务...
+      promptAction.showToast({
+        message: text
+      })
     });
   }
 
@@ -49,6 +56,12 @@ export default class EntryAbility extends UIAbility {
   onForeground(): void {
     // Ability has brought to foreground
     hilog.info(0x0000, 'testTag', '%{public}s', 'Ability onForeground');
+    // 读取剪贴板的内容（拼多多，淘宝，读取分享链接）
+    const text = pasteboardManager.getPasteText()
+    // 后续业务...
+    promptAction.showToast({
+      message: text
+    })
   }
 
   onBackground(): void {

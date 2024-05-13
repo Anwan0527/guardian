@@ -2,6 +2,7 @@ import { router } from '@kit.ArkUI'
 import { contact } from '@kit.ContactsKit'
 import { NavigationTitleBuilder } from '../../common/builders'
 import { themeManager } from '../../manager'
+import { contactManager } from '../../manager/ContactManager'
 
 export interface DuplicateGroupItem {
   fullName: string
@@ -22,10 +23,19 @@ struct ContactOptimizePage {
 
   onPageShow() {
     themeManager.settingStatusBarWhite()
+    this.getData()
   }
 
   onPageHide() {
     themeManager.settingStatusBarBlack()
+  }
+
+  // 获取通讯录的数据
+  async getData() {
+    // 获取所有联系人信息
+    this.contacts = await contactManager.getContacts()
+    // 获取所有群组信息
+    this.groups = await contactManager.getGroups()
   }
 
   build() {

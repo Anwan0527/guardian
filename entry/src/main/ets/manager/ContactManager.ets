@@ -1,6 +1,7 @@
 import { Permissions } from '@kit.AbilityKit';
 import { contact } from '@kit.ContactsKit';
 import { permissionManager } from './PermissionManager';
+import { deviceInfo } from '@kit.BasicServicesKit';
 
 class ContactManager {
   // 通讯录读写权限
@@ -16,9 +17,30 @@ class ContactManager {
   }
 
   // 获取所有通讯录联系人
-  getContacts() {
-    // API 的 queryContacts 是带 s 的
-    return contact.queryContacts(getContext())
+  async getContacts(): Promise<contact.Contact[]> {
+    if (deviceInfo.marketName === 'emulator') {
+      // 如果是模拟器，返回一份假的数据，方便测试
+      return [
+        {
+          name: {
+            fullName: '孙悟空'
+          },
+          phoneNumbers: [
+            {
+              phoneNumber: '13666666'
+            }
+          ]
+        }
+      ]
+    } else {
+      // API 11 的 queryContacts 是带 s 的
+      return contact.queryContacts(getContext())
+    }
+  }
+
+  // 获取群组
+  getGroups() {
+    return contact.queryGroups(getContext())
   }
 }
 
