@@ -2,6 +2,7 @@ import { router } from '@kit.ArkUI'
 import { NavigationTitleBuilder } from '../../common/builders'
 import { LOGIN_INFO } from '../../common/constants'
 import { themeManager } from '../../manager'
+import { contactManager } from '../../manager/ContactManager'
 
 /** 登录响应 */
 export interface LoginInfo {
@@ -32,6 +33,16 @@ struct ContactIndexPage {
 
   onPageHide() {
     themeManager.settingStatusBarBlack()
+  }
+
+  // 点击备份通讯录的联系人
+  async onBackup() {
+    try {
+      const list = await contactManager.getContacts()
+      AlertDialog.show({ message: JSON.stringify(list, null, 2) })
+    } catch (error) {
+      AlertDialog.show({ message: JSON.stringify(error, null, 2) })
+    }
   }
 
   @Builder
@@ -107,6 +118,7 @@ struct ContactIndexPage {
             }
             .onClick(() => {
               // TODO: 通讯录备份
+              this.onBackup()
             })
           }
 

@@ -1,4 +1,4 @@
-import { PrivacySettings, PRIVACY_SETTINGS } from '../common/constants';
+import { LoginInfoResponse, LOGIN_INFO, PrivacySettings, PRIVACY_SETTINGS } from '../common/constants';
 import { themeManager } from '../manager';
 import { GuardTabsComp } from './Tabs/GuardTabsComp';
 import { HomeTabsComp } from './Tabs/HomeTabsComp';
@@ -6,6 +6,7 @@ import { MyTabsComp } from './Tabs/MyTabsComp';
 
 // TODO: 切换页面时，更新我的页面信息
 PersistentStorage.persistProp<PrivacySettings>(PRIVACY_SETTINGS, {}) //数据持久化
+PersistentStorage.persistProp<LoginInfoResponse>(LOGIN_INFO, {})
 
 @Entry
 @Component

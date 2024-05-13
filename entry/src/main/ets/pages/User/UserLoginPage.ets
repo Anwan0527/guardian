@@ -1,7 +1,7 @@
 import { AxiosResponse } from '@ohos/axios'
 import { BASE_URL, LOGIN_INFO, LoginInfoResponse } from '../../common/constants'
 import { axiosInstance } from '../../common/utils'
-import { promptAction } from '@kit.ArkUI'
+import { promptAction, router } from '@kit.ArkUI'
 import { postCodeGraphicCheckAPI, postCodeSmsSendAPI, postUserLoginVerifyCodeAPI } from '../../common/api'
 
 interface postCodeGraphicCheckData {
@@ -36,6 +36,8 @@ struct UserLoginPage {
       promptAction.showToast({
         message: '短信已发送'
       })
+      // 更新界面中的倒计时
+      this.startCountDown()
       this.isShowSheet = false
       this.sendSmsCode()
     } catch {
@@ -43,15 +45,44 @@ struct UserLoginPage {
     }
   }
 
+  //发送验证码
   async sendSmsCode() {
     const res = await postCodeSmsSendAPI({ phone: this.phoneNumber, bizType: 1 })
     AlertDialog.show({ message: JSON.stringify(res) })
   }
 
+  // 开始倒计时，自己完成即可
+  startCountDown() {
+    // 初始化倒计时秒数
+    this.count = 120
+    // 开启定时器
+    this.intervalID = setInterval(() => {
+      this.count--
+      if (this.count <= 0) {
+        // 停止倒计时
+        clearInterval(this.intervalID)
+      }
+    }, 1000)
+  }
+
+  // 页面卸载停止倒计时
+  aboutToDisappear() {
+    clearInterval(this.intervalID)
+  }
+
   //用户登陆
   async onSubmitLoginForm() {
+    // 为了方便测试：大家也可通过通用 手机验证码 123456 实现登录
     const res = await postUserLoginVerifyCodeAPI({ phone: this.phoneNumber, verifyCode: this.verifyCode })
-    AlertDialog.show({ message: JSON.stringify(res) })
+    // AlertDialog.show({ message: JSON.stringify(res, null, 2) })
+    // 登录成功返回用户信息
+    if (res.data.result) {
+      // 持久化存储用户信息
+      this.loginInfo = res.data.result as LoginInfoResponse
+      // 提示
+      promptAction.showToast({ message: '登录成功' })
+      router.back()
+    }
   }
 
   // 半模态转场
